@@ -14,8 +14,19 @@ connectDB();
 
 const app = express();
 
+const allowedOrigins = [
+  'http://localhost:8080',
+  'https://gerenciamento-projetos-six.vercel.app' // Production frontend
+];
+
 app.use(cors({
-  origin: 'http://localhost:8080',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());
