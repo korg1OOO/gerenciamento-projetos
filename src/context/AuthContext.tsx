@@ -37,6 +37,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/backend';
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  console.log('API_BASE_URL:', import.meta.env.VITE_API_BASE_URL || '/backend');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,15 +85,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
+  console.log('API_BASE_URL:', API_BASE_URL);
+  console.log('Login request:', { email, password });
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
+    console.log('Response status:', response.status, 'URL:', `${API_BASE_URL}/api/auth/login`);
     if (response.ok) {
       const { token, user } = await response.json();
-      localStorage.setItem('token', token); // Ensure this line executes
+      localStorage.setItem('token', token);
       setCurrentUser(user);
       await fetchUsers();
       return true;
