@@ -88,12 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   console.log('API_BASE_URL:', API_BASE_URL);
   console.log('Login request:', { email, password });
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, { // Removed extra /api
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    console.log('Response status:', response.status, 'URL:', `${API_BASE_URL}/api/auth/login`);
+    console.log('Response status:', response.status, 'URL:', `${API_BASE_URL}/auth/login`);
     if (response.ok) {
       const { token, user } = await response.json();
       localStorage.setItem('token', token);

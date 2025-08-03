@@ -2,7 +2,7 @@ import { NowRequest, NowResponse } from '@vercel/node';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import User from '../../backend/src/models/User'; // Adjust path based on your structure
+import User from '../../backend/src/models/User';
 
 export default async function handler(req: NowRequest, res: NowResponse) {
   if (req.method !== 'POST') {
@@ -12,7 +12,7 @@ export default async function handler(req: NowRequest, res: NowResponse) {
   const { email, password } = req.body;
 
   try {
-    await mongoose.connect(process.env.MONGODB_URI as string); // Ensure MONGODB_URI is set
+    await mongoose.connect(process.env.MONGODB_URI as string);
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
