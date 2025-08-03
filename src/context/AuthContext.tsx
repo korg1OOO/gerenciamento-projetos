@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   console.log('API_BASE_URL:', API_BASE_URL);
   console.log('Login request:', { email, password });
   try {
-    const response = await fetch(`${API_BASE_URL}auth/login`, { // Removed leading /
+    const response = await fetch(`${API_BASE_URL}/auth/login`, { // Removed leading /
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -115,7 +115,7 @@ const register = async (name: string, email: string, password: string, role: Use
   console.log('API_BASE_URL:', API_BASE_URL);
   console.log('Register request:', { name, email, password, role });
   try {
-    const response = await fetch(`${API_BASE_URL}auth/register`, { // Removed leading /
+    const response = await fetch(`${API_BASE_URL}/auth/register`, { // Removed leading /
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password, role }),
