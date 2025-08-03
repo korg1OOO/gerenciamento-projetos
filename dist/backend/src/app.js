@@ -1,21 +1,26 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import connectDB from './config/database';
-import authRoutes from './routes/authRoutes';
-import userRoutes from './routes/userRoutes';
-import operationRoutes from './routes/operationRoutes';
-import expenseRoutes from './routes/expenseRoutes';
-import taskRoutes from './routes/taskRoutes';
-import clientRoutes from './routes/clientRoutes';
-dotenv.config();
-connectDB();
-const app = express();
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const dotenv_1 = __importDefault(require("dotenv"));
+const database_1 = __importDefault(require("./config/database"));
+const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
+const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
+const operationRoutes_1 = __importDefault(require("./routes/operationRoutes"));
+const expenseRoutes_1 = __importDefault(require("./routes/expenseRoutes"));
+const taskRoutes_1 = __importDefault(require("./routes/taskRoutes"));
+const clientRoutes_1 = __importDefault(require("./routes/clientRoutes"));
+dotenv_1.default.config();
+(0, database_1.default)();
+const app = (0, express_1.default)();
 const allowedOrigins = [
     'http://localhost:8080',
     'https://gerenciamento-projetos-six.vercel.app' // Production frontend
 ];
-app.use(cors({
+app.use((0, cors_1.default)({
     origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
@@ -26,12 +31,12 @@ app.use(cors({
     },
     credentials: true,
 }));
-app.use(express.json());
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/operations', operationRoutes);
-app.use('/api/expenses', expenseRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/clients', clientRoutes);
+app.use(express_1.default.json());
+app.use('/api/auth', authRoutes_1.default);
+app.use('/api/users', userRoutes_1.default);
+app.use('/api/operations', operationRoutes_1.default);
+app.use('/api/expenses', expenseRoutes_1.default);
+app.use('/api/tasks', taskRoutes_1.default);
+app.use('/api/clients', clientRoutes_1.default);
 const PORT = process.env.PORT || 8081;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

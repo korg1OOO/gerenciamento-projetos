@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -7,10 +8,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
-import User from '../../backend/src/models/User'; // Adjust path based on your structure
-export default function handler(req, res) {
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = handler;
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const mongoose_1 = __importDefault(require("mongoose"));
+const User_1 = __importDefault(require("../../backend/src/models/User")); // Adjust path based on your structure
+function handler(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         if (req.method !== 'GET') {
@@ -21,9 +27,9 @@ export default function handler(req, res) {
             return res.status(401).json({ message: 'No token provided' });
         }
         try {
-            yield mongoose.connect(process.env.MONGODB_URI); // Ensure MONGODB_URI is set
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const user = yield User.findById(decoded.userId).select('-password');
+            yield mongoose_1.default.connect(process.env.MONGODB_URI); // Ensure MONGODB_URI is set
+            const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+            const user = yield User_1.default.findById(decoded.userId).select('-password');
             if (!user) {
                 return res.status(401).json({ message: 'Invalid token' });
             }
