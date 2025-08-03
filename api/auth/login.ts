@@ -2,7 +2,7 @@ import { NowRequest, NowResponse } from '@vercel/node';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import User from '../../../backend/src/models/User'; // Adjust path based on your structure
+import User from '../../backend/src/models/User'; // Adjust path based on your structure
 
 export default async function handler(req: NowRequest, res: NowResponse) {
   if (req.method !== 'POST') {
