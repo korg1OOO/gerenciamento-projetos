@@ -2,7 +2,7 @@ import { NowRequest, NowResponse } from '@vercel/node';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import User from '../../backend/src/models/User'; // Adjust path based on your structure
+import User from '../../backend/src/models/User';
 
 export default async function handler(req: NowRequest, res: NowResponse) {
   if (req.method !== 'POST') {
@@ -12,7 +12,9 @@ export default async function handler(req: NowRequest, res: NowResponse) {
   const { name, email, password, role } = req.body;
 
   try {
-    await mongoose.connect(process.env.MONGODB_URI as string); // Ensure MONGODB_URI is set
+    console.log('Connecting to MongoDB with URI:', process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGODB_URI as string);
+    console.log('MongoDB connected, checking for existing user:', email);
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
@@ -35,6 +37,7 @@ export default async function handler(req: NowRequest, res: NowResponse) {
     });
 
     await user.save();
+    console.log('User registered, generating token');
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET as string, {
       expiresIn: '1h',
@@ -42,7 +45,7 @@ export default async function handler(req: NowRequest, res: NowResponse) {
 
     return res.status(201).json({ token, user: { ...user.toJSON(), password: undefined } });
   } catch (error) {
-    console.error('Register error:', error);
+    console.error('Register error details:', (error as Error).message, (error as Error).stack);
     return res.status(500).json({ message: 'Server error', error: (error as Error).message });
   }
 }

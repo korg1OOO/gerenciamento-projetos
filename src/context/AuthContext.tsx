@@ -88,12 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   console.log('API_BASE_URL:', API_BASE_URL);
   console.log('Login request:', { email, password });
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, { // Removed leading /
+    const response = await fetch(`${API_BASE_URL}/auth/login`, { // Added leading /
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    console.log('Response status:', response.status, 'URL:', `${API_BASE_URL}auth/login`);
+    console.log('Response status:', response.status, 'URL:', `${API_BASE_URL}/auth/login`);
     if (response.ok) {
       const { token, user } = await response.json();
       localStorage.setItem('token', token);
@@ -115,12 +115,12 @@ const register = async (name: string, email: string, password: string, role: Use
   console.log('API_BASE_URL:', API_BASE_URL);
   console.log('Register request:', { name, email, password, role });
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, { // Removed leading /
+    const response = await fetch(`${API_BASE_URL}/auth/register`, { // Added leading /
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password, role }),
     });
-    console.log('Response status:', response.status, 'URL:', `${API_BASE_URL}auth/register`);
+    console.log('Response status:', response.status, 'URL:', `${API_BASE_URL}/auth/register`);
     if (response.ok) {
       const { token, user } = await response.json();
       localStorage.setItem('token', token);
