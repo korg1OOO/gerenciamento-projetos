@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/src/app.ts",
+      "src": "api/**/*.ts",
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
@@ -19,8 +19,16 @@
   ],
   "routes": [
     {
-      "src": "/backend/(.*)",
-      "dest": "/backend/src/app.ts"
+      "src": "/api/auth/register",
+      "dest": "api/auth/register.ts"
+    },
+    {
+      "src": "/api/auth/login",
+      "dest": "api/auth/login.ts"
+    },
+    {
+      "src": "/api/auth/me",
+      "dest": "api/auth/me.ts"
     },
     {
       "src": "/assets/(.*)",
