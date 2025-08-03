@@ -23,8 +23,8 @@
       "dest": "/backend/src/app.ts"
     },
     {
-      "src": "/dist/(.*)",
-      "dest": "/dist/$1"
+      "src": "/assets/(.*)",
+      "dest": "/dist/assets/$1"
     },
     {
       "src": "/(.*)",
