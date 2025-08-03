@@ -5,11 +5,7 @@
       "src": "api/**/*.ts",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": [
-          "backend/src/**",
-          "backend/package.json",
-          "backend/node_modules/**"
-        ]
+        "includeFiles": ["backend/src/**", "backend/package.json", "backend/node_modules/**", "tsconfig.server.json"]
       }
     },
     {
@@ -20,15 +16,15 @@
   "routes": [
     {
       "src": "/api/auth/register",
-      "dest": "api/auth/register.ts"
+      "dest": "dist/api/auth/register.js"
     },
     {
       "src": "/api/auth/login",
-      "dest": "api/auth/login.ts"
+      "dest": "dist/api/auth/login.js"
     },
     {
       "src": "/api/auth/me",
-      "dest": "api/auth/me.ts"
+      "dest": "dist/api/auth/me.js"
     },
     {
       "src": "/assets/(.*)",

@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { User } from '../types';
+import { User } from '../../src/types/index'; // Adjusted path from ../types to ../../src/types/index
 
 const userSchema = new Schema<User>({
   name: { type: String, required: true },

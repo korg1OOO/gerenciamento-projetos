@@ -1,11 +1,9 @@
-// api/auth/login.ts
-import { NowRequest, NowResponse } from '@vercel/node';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import User from '../../backend/src/models/User';
 
-export default async function handler(req: NowRequest, res: NowResponse) {
+export default async function (req: any, res: any) { // Use any for now, refine with proper types later
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
