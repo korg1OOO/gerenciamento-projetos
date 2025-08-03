@@ -88,12 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   console.log('API_BASE_URL:', API_BASE_URL);
   console.log('Login request:', { email, password });
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, { // Removed extra /api
+    const response = await fetch(`${API_BASE_URL}auth/login`, { // Removed leading /
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    console.log('Response status:', response.status, 'URL:', `${API_BASE_URL}/auth/login`);
+    console.log('Response status:', response.status, 'URL:', `${API_BASE_URL}auth/login`);
     if (response.ok) {
       const { token, user } = await response.json();
       localStorage.setItem('token', token);
@@ -101,13 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fetchUsers();
       return true;
     } else {
-      const errorData = await response.json();
+      const errorData = await response.text(); // Use text() for non-JSON responses
       console.error('Login failed:', errorData);
-      throw new Error(
-        errorData.errors
-          ? errorData.errors.map((err: any) => err.msg).join(', ')
-          : errorData.message || 'Login failed'
-      );
+      throw new Error(errorData || 'Login failed');
     }
   } catch (error) {
     console.error('Error logging in:', error);
@@ -115,33 +111,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 };
 
-  const register = async (name: string, email: string, password: string, role: UserRole): Promise<boolean> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role }),
-      });
-      if (response.ok) {
-        const { token, user } = await response.json();
-        localStorage.setItem('token', token);
-        setCurrentUser(user);
-        await fetchUsers();
-        return true;
-      } else {
-        const errorData = await response.json();
-        console.error('Register failed:', errorData);
-        throw new Error(
-          errorData.errors
-            ? errorData.errors.map((err: any) => err.msg).join(', ')
-            : errorData.message || 'Registration failed'
-        );
-      }
-    } catch (error) {
-      console.error('Error registering:', error);
-      throw error;
+const register = async (name: string, email: string, password: string, role: UserRole): Promise<boolean> => {
+  console.log('API_BASE_URL:', API_BASE_URL);
+  console.log('Register request:', { name, email, password, role });
+  try {
+    const response = await fetch(`${API_BASE_URL}auth/register`, { // Removed leading /
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, role }),
+    });
+    console.log('Response status:', response.status, 'URL:', `${API_BASE_URL}auth/register`);
+    if (response.ok) {
+      const { token, user } = await response.json();
+      localStorage.setItem('token', token);
+      setCurrentUser(user);
+      await fetchUsers();
+      return true;
+    } else {
+      const errorData = await response.text();
+      console.error('Register failed:', errorData);
+      throw new Error(errorData || 'Registration failed');
     }
-  };
+  } catch (error) {
+    console.error('Error registering:', error);
+    throw error;
+  }
+};
 
   const logout = () => {
     localStorage.removeItem('token');
