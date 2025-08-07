@@ -1,12 +1,23 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs'; // Add this import
+import bcrypt from 'bcryptjs';
 import User from '../models/User';
 import { AuthRequest } from '../middleware/authMiddleware';
+
+const mapUserToResponse = (user: any) => ({
+  id: user._id.toString(),
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  permissions: user.permissions,
+  createdAt: user.createdAt,
+  lastLogin: user.lastLogin,
+});
 
 export const getUsers = async (req: AuthRequest, res: Response) => {
   try {
     const users = await User.find().select('-password');
-    res.json(users);
+    const mappedUsers = users.map(mapUserToResponse);
+    res.json(mappedUsers);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -30,7 +41,7 @@ export const addUser = async (req: AuthRequest, res: Response) => {
     });
 
     await user.save();
-    res.status(201).json({ ...user.toJSON(), password: undefined });
+    res.status(201).json(mapUserToResponse(user));
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -44,7 +55,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.json(user);
+    res.json(mapUserToResponse(user));
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -71,7 +82,7 @@ export const updateUserPermissions = async (req: AuthRequest, res: Response) => 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.json(user);
+    res.json(mapUserToResponse(user));
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

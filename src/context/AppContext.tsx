@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useProfile } from './ProfileContext';
 import { Operation, Expense, Task, Client } from './AppContext';
 import { useAuth } from './AuthContext';
@@ -35,33 +35,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
 
+  const getToken = () => localStorage.getItem('token') || sessionStorage.getItem('token');
+
   const fetchData = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('No token available');
-      return;
-    }
+    try {
+      const token = getToken();
+      if (!token) {
+        console.error('No token available');
+        return;
+      }
 
-    const [operationsRes, expensesRes, tasksRes, clientsRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/api/operations`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`${API_BASE_URL}/api/expenses`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`${API_BASE_URL}/api/tasks`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`${API_BASE_URL}/api/clients`, { headers: { Authorization: `Bearer ${token}` } }),
-    ]);
+      const [operationsRes, expensesRes, tasksRes, clientsRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/operations`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/api/expenses`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/api/tasks`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/api/clients`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
 
-    if (operationsRes.ok) {
-      const data = await operationsRes.json();
-      console.log('Operations fetched:', data); // Debug log
-      setOperations(data);
+      if (operationsRes.ok) {
+        const data = await operationsRes.json();
+        console.log('Operations fetched:', data); // Debug log
+        setOperations(data);
+      }
+      if (expensesRes.ok) setExpenses(await expensesRes.json());
+      if (tasksRes.ok) setTasks(await tasksRes.json());
+      if (clientsRes.ok) setClients(await clientsRes.json());
+    } catch (error) {
+      console.error('Error fetching data:', error);
     }
-    if (expensesRes.ok) setExpenses(await expensesRes.json());
-    if (tasksRes.ok) setTasks(await tasksRes.json());
-    if (clientsRes.ok) setClients(await clientsRes.json());
-  } catch (error) {
-    console.error('Error fetching data:', error);
-  }
-};
+  };
 
   useEffect(() => {
     fetchData();
@@ -69,7 +71,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addOperation = async (operation: Omit<Operation, 'id' | 'createdAt' | 'createdBy'>) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/operations`, {
         method: 'POST',
@@ -90,7 +92,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateOperation = async (id: string, updates: Partial<Operation>) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/operations/${id}`, {
         method: 'PUT',
@@ -111,7 +113,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteOperation = async (id: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/operations/${id}`, {
         method: 'DELETE',
@@ -135,7 +137,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/expenses`, {
         method: 'POST',
@@ -164,7 +166,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/expenses/${id}`, {
         method: 'PUT',
@@ -185,7 +187,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteExpense = async (id: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/expenses/${id}`, {
         method: 'DELETE',
@@ -209,7 +211,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/tasks`, {
         method: 'POST',
@@ -238,7 +240,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/tasks/${id}`, {
         method: 'PUT',
@@ -259,7 +261,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteTask = async (id: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/tasks/${id}`, {
         method: 'DELETE',
@@ -275,7 +277,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addClient = async (client: Omit<Client, 'id' | 'createdAt' | 'createdBy'>) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/clients`, {
         method: 'POST',
@@ -296,7 +298,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateClient = async (id: string, updates: Partial<Client>) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/clients/${id}`, {
         method: 'PUT',
@@ -317,7 +319,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteClient = async (id: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) throw new Error('No token available');
       const response = await fetch(`${API_BASE_URL}/api/clients/${id}`, {
         method: 'DELETE',

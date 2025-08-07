@@ -1,7 +1,8 @@
+import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
-import { AuthProvider, useAuth } from './context/AuthContext'; // Add useAuth import
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProfileProvider } from './context/ProfileContext';
 import { MainLayout } from './components/layout/MainLayout';
@@ -21,7 +22,7 @@ import NotFound from './pages/NotFound';
 const queryClient = new QueryClient();
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, isLoading } = useAuth(); // Now properly imported
+  const { currentUser, isLoading } = useAuth();
 
   if (isLoading) {
     return <div>Loading...</div>;

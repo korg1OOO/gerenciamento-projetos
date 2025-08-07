@@ -5,42 +5,44 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox'; // Add Checkbox import
 import { useToast } from '@/hooks/use-toast';
 import { Lock } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false); // New state for rememberMe
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-      const success = await login(email, password);
-      if (success) {
-        navigate('/dashboard');
-      } else {
-        toast({
-          title: 'Erro',
-          description: 'Credenciais inválidas. Verifique o email e a senha.',
-          variant: 'destructive',
-        });
-      }
-    } catch (error: any) {
+  e.preventDefault();
+  if (isSubmitting) return;
+  setIsSubmitting(true);
+  try {
+    const success = await login(email, password, rememberMe);
+    if (success) {
+      navigate('/dashboard');
+    } else {
       toast({
         title: 'Erro',
-        description: error.message || 'Erro ao conectar ao servidor. Verifique se o backend está ativo.',
+        description: 'Credenciais inválidas. Verifique o email e a senha.',
         variant: 'destructive',
       });
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  } catch (error: any) {
+    toast({
+      title: 'Erro',
+      description: error.message || 'Erro ao conectar ao servidor. Verifique se o backend está ativo.',
+      variant: 'destructive',
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -74,6 +76,14 @@ export default function Login() {
                 placeholder="Digite sua senha"
                 required
               />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="rememberMe"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+              />
+              <Label htmlFor="rememberMe">Lembrar-me</Label>
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? 'Entrando...' : 'Entrar'}

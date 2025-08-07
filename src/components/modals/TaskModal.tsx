@@ -24,38 +24,38 @@ export function TaskModal({ open, onOpenChange, task, mode }: TaskModalProps) {
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0],
-    time: '',
-    operationId: '',
-    completed: false,
-    priority: 'media' as 'baixa' | 'media' | 'alta'
-  });
+  title: '',
+  description: '',
+  date: new Date().toISOString().split('T')[0],
+  time: '',
+  operationId: 'none', // Changed from '' to 'none'
+  completed: false,
+  priority: 'media' as 'baixa' | 'media' | 'alta'
+});
 
-  useEffect(() => {
-    if (task && mode === 'edit') {
-      setFormData({
-        title: task.title,
-        description: task.description,
-        date: new Date(task.date).toISOString().split('T')[0],
-        time: task.time || '',
-        operationId: task.operationId || '',
-        completed: task.completed,
-        priority: task.priority
-      });
-    } else {
-      setFormData({
-        title: '',
-        description: '',
-        date: new Date().toISOString().split('T')[0],
-        time: '',
-        operationId: '',
-        completed: false,
-        priority: 'media'
-      });
-    }
-  }, [task, mode, open]);
+useEffect(() => {
+  if (task && mode === 'edit') {
+    setFormData({
+      title: task.title,
+      description: task.description,
+      date: new Date(task.date).toISOString().split('T')[0],
+      time: task.time || '',
+      operationId: task.operationId || 'none', // Changed from '' to 'none'
+      completed: task.completed,
+      priority: task.priority
+    });
+  } else {
+    setFormData({
+      title: '',
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+      time: '',
+      operationId: 'none', // Changed from '' to 'none'
+      completed: false,
+      priority: 'media'
+    });
+  }
+}, [task, mode, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,14 +76,14 @@ export function TaskModal({ open, onOpenChange, task, mode }: TaskModalProps) {
     taskDate.setUTCDate(parseInt(formData.date.split('-')[2]));
 
     const taskData = {
-      title: formData.title,
-      description: formData.description,
-      date: formData.date, // Passar como string para correção no AppContext
-      time: formData.time || undefined,
-      operationId: formData.operationId || undefined,
-      completed: formData.completed,
-      priority: formData.priority
-    };
+  title: formData.title,
+  description: formData.description,
+  date: formData.date, // Passar como string para correção no AppContext
+  time: formData.time || undefined,
+  operationId: formData.operationId === 'none' ? undefined : formData.operationId, // Handle 'none' case
+  completed: formData.completed,
+  priority: formData.priority
+};
 
     if (mode === 'create') {
       addTask(taskData);
@@ -173,23 +173,24 @@ export function TaskModal({ open, onOpenChange, task, mode }: TaskModalProps) {
           </div>
 
           <div>
-            <Label htmlFor="operation">Operação (Opcional)</Label>
-            <Select value={formData.operationId} onValueChange={(value) => 
-              setFormData({ ...formData, operationId: value })
-            }>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecionar operação" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Nenhuma operação</SelectItem>
-                {operations.map((operation) => (
-                  <SelectItem key={operation.id} value={operation.id}>
-                    {operation.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+  <Label htmlFor="operation">Operação (Opcional)</Label>
+  <Select
+    value={formData.operationId}
+    onValueChange={(value) => setFormData({ ...formData, operationId: value })}
+  >
+    <SelectTrigger>
+      <SelectValue placeholder="Selecionar operação" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="none">Nenhuma operação</SelectItem> {/* Changed from value="" to value="none" */}
+      {operations.map((operation) => (
+        <SelectItem key={operation.id} value={operation.id}>
+          {operation.name}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
 
           {mode === 'edit' && (
             <div className="flex items-center space-x-2">

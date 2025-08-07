@@ -1,16 +1,30 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
 import { body, validationResult } from 'express-validator';
+import User from '../models/User';
 import { AuthRequest } from '../middleware/authMiddleware';
 
+const mapUserToResponse = (user: any) => ({
+  id: user._id.toString(),
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  permissions: user.permissions,
+  createdAt: user.createdAt,
+  lastLogin: user.lastLogin,
+});
+
 export const register = [
+  body('email').isEmail().withMessage('Invalid email'),
+  body('password').notEmpty().withMessage('Password is required'),
+  body('name').notEmpty().withMessage('Name is required'),
+  body('role').isIn(['admin', 'gestor', 'colaborador']).withMessage('Invalid role'),
   async (req: Request, res: Response) => {
-    console.log('Register request received:', req.body); // Log incoming request
+    console.log('Register request received:', req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array()); // Log validation errors
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -42,10 +56,10 @@ export const register = [
       await user.save();
 
       const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET as string, {
-        expiresIn: '1h',
+        expiresIn: '30d',
       });
 
-      res.status(201).json({ token, user: { ...user.toJSON(), password: undefined } });
+      res.status(201).json({ token, user: mapUserToResponse(user) });
     } catch (error) {
       console.error('Register error:', error);
       res.status(500).json({ message: 'Server error', error: (error as Error).message });
@@ -57,14 +71,14 @@ export const login = [
   body('email').isEmail().withMessage('Invalid email'),
   body('password').notEmpty().withMessage('Password is required'),
   async (req: Request, res: Response) => {
-    console.log('Login request received:', req.body); // Log incoming request
+    console.log('Login request received:', req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array()); // Log validation errors
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     try {
       const user = await User.findOne({ email });
@@ -82,11 +96,12 @@ export const login = [
       user.lastLogin = new Date();
       await user.save();
 
+      const expiresIn = rememberMe ? '30d' : '1h';
       const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET as string, {
-        expiresIn: '1h',
+        expiresIn,
       });
 
-      res.json({ token, user: { ...user.toJSON(), password: undefined } });
+      res.json({ token, user: mapUserToResponse(user) });
     } catch (error) {
       console.error('Login error:', error);
       res.status(500).json({ message: 'Server error', error: (error as Error).message });
@@ -99,7 +114,7 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: 'No user authenticated' });
     }
-    res.json(req.user);
+    res.json(mapUserToResponse(req.user));
   } catch (error) {
     console.error('Get current user error:', error);
     res.status(500).json({ message: 'Server error', error: (error as Error).message });
