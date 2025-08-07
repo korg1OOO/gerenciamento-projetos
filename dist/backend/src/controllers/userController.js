@@ -13,12 +13,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateUserPermissions = exports.deleteUser = exports.updateUser = exports.addUser = exports.getUsers = void 0;
-const bcryptjs_1 = __importDefault(require("bcryptjs")); // Add this import
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const User_1 = __importDefault(require("../models/User"));
+const mapUserToResponse = (user) => ({
+    id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    permissions: user.permissions,
+    createdAt: user.createdAt,
+    lastLogin: user.lastLogin,
+});
 const getUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const users = yield User_1.default.find().select('-password');
-        res.json(users);
+        const mappedUsers = users.map(mapUserToResponse);
+        res.json(mappedUsers);
     }
     catch (error) {
         res.status(500).json({ message: 'Server error' });
@@ -41,7 +51,7 @@ const addUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             createdAt: new Date(),
         });
         yield user.save();
-        res.status(201).json(Object.assign(Object.assign({}, user.toJSON()), { password: undefined }));
+        res.status(201).json(mapUserToResponse(user));
     }
     catch (error) {
         res.status(500).json({ message: 'Server error' });
@@ -56,7 +66,7 @@ const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        res.json(user);
+        res.json(mapUserToResponse(user));
     }
     catch (error) {
         res.status(500).json({ message: 'Server error' });
@@ -85,7 +95,7 @@ const updateUserPermissions = (req, res) => __awaiter(void 0, void 0, void 0, fu
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        res.json(user);
+        res.json(mapUserToResponse(user));
     }
     catch (error) {
         res.status(500).json({ message: 'Server error' });
