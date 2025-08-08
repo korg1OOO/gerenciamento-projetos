@@ -97,16 +97,20 @@ export function AppSidebar() {
 
   // Determinar largura da sidebar baseada no dispositivo e estado
   const getSidebarWidth = () => {
-    if (isMobile) return collapsed ? "w-16" : "w-72";
+    if (isMobile) return collapsed ? "w-0" : "w-72"; // Adjust for offcanvas (hidden when collapsed)
     if (isTablet) return collapsed ? "w-16" : "w-56";
     return collapsed ? "w-16" : "w-72";
   };
 
+  // Conditional variant and collapsible for mobile responsiveness
+  const sidebarVariant = isMobile ? "floating" : "sidebar";
+  const sidebarCollapsible = isMobile ? "offcanvas" : "icon";
+
   return (
     <Sidebar 
       className={`${getSidebarWidth()} border-r border-sidebar-border bg-sidebar dark:bg-sidebar shadow-subtle transition-all duration-300`}
-      collapsible="icon"
-      variant="sidebar"
+      collapsible={sidebarCollapsible}
+      variant={sidebarVariant}
     >
       <SidebarHeader className="border-b border-sidebar-border p-4 bg-sidebar dark:bg-sidebar">
         <div className="flex items-center gap-3">
@@ -147,7 +151,7 @@ export function AppSidebar() {
                         }`
                       }
                     >
-                      <item.icon className="h-5 w-5 shrink-0" />
+                      <item.icon className="h-5 w-5 shrink-0 text-foreground" /> {/* Explicit color for better visibility */}
                       {!collapsed && (
                         <>
                           <span className="flex-1 font-medium truncate">{item.title}</span>
