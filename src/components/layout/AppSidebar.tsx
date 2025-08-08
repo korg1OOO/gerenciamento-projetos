@@ -104,11 +104,11 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className={`${getSidebarWidth()} border-r border-sidebar-border bg-sidebar shadow-subtle transition-all duration-300`}
+      className={`${getSidebarWidth()} border-r border-sidebar-border bg-sidebar dark:bg-sidebar shadow-subtle transition-all duration-300`}
       collapsible="icon"
       variant="sidebar"
     >
-      <SidebarHeader className="border-b border-sidebar-border p-4 bg-sidebar">
+      <SidebarHeader className="border-b border-sidebar-border p-4 bg-sidebar dark:bg-sidebar">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary shadow-sm">
             <Building2 className="h-6 w-6 text-primary-foreground" />
@@ -126,7 +126,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-3 md:p-4 bg-sidebar overflow-y-auto">
+      <SidebarContent className="p-3 md:p-4 bg-sidebar dark:bg-sidebar overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider mb-3 px-2">
             Menu Principal
