@@ -33,24 +33,19 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement;
 
-    root.classList.remove("light", "dark");
+    root.classList.remove("dark");
 
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
-
-      root.classList.add(systemTheme);
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      if (systemTheme === "dark") {
+        root.classList.add("dark");
+      }
       return;
     }
 
-    root.classList.add(theme);
-    
-    // Forçar re-render para garantir que os estilos sejam aplicados
-    document.body.style.display = 'none';
-    document.body.offsetHeight; // trigger reflow
-    document.body.style.display = '';
+    if (theme === "dark") {
+      root.classList.add("dark");
+    }
   }, [theme]);
 
   // Adicionar listener para mudanças de tema do sistema
@@ -59,8 +54,11 @@ export function ThemeProvider({
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       const handleChange = () => {
         const root = window.document.documentElement;
-        root.classList.remove("light", "dark");
-        root.classList.add(mediaQuery.matches ? "dark" : "light");
+        if (mediaQuery.matches) {
+          root.classList.add("dark");
+        } else {
+          root.classList.remove("dark");
+        }
       };
 
       mediaQuery.addEventListener("change", handleChange);
