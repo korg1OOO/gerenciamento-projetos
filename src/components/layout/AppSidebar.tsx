@@ -46,12 +46,12 @@ const mainNavItems = [
 ];
 
 export function AppSidebar() {
-  const { open } = useSidebar();  // Changed to use 'open' for more reliable expanded state detection
+  const { state } = useSidebar();
   const { currentUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
-  const collapsed = !open;  // Define collapsed based on !open
+  const collapsed = state === "collapsed";
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
 
