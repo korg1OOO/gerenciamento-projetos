@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
@@ -46,14 +45,15 @@ const mainNavItems = [
 ];
 
 export function AppSidebar() {
-  const { state, openMobile } = useSidebar();
+  const { open, openMobile } = useSidebar();
   const { currentUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
-  const collapsed = isMobile ? !openMobile : state === "collapsed";
+  const isOpen = isMobile ? openMobile : open;
+  const collapsed = !isOpen;
 
   const isActive = (path: string) => currentPath === path;
 

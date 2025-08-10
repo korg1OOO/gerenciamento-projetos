@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,11 +13,10 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
   return (
-    <SidebarProvider
-      defaultOpen={!isMobile}
-    >
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
