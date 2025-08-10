@@ -22,7 +22,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 flex items-center justify-between border-b border-border bg-card/50 backdrop-blur px-3 sm:px-4 sticky top-0 z-40 shadow-subtle">
             <div className="flex items-center gap-2 sm:gap-4">
-              <SidebarTrigger className="shrink-0" />
+              <SidebarTrigger className="shrink-0 md:hidden" />
               {!isMobile && (
                 <h1 className="text-base sm:text-lg font-semibold text-foreground truncate">
                   Sistema de Gestão Empresarial
