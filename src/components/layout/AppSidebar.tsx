@@ -15,7 +15,8 @@ import {
   UserCog,
   Crown,
   Shield,
-  User as UserIcon
+  User as UserIcon,
+  LogOut,
 } from "lucide-react";
 
 import {
@@ -46,7 +47,7 @@ const mainNavItems = [
 
 export function AppSidebar() {
   const { open, openMobile } = useSidebar();
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth(); // Added logout from AuthContext (assuming it exists)
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
@@ -192,6 +193,15 @@ export function AppSidebar() {
                       </p>
                     </div>
                   </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start gap-2 mt-3 rounded-lg text-xs text-sidebar-foreground border-sidebar-border"
+                    onClick={logout} // Calls the logout function from AuthContext
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </Button>
                 </SidebarGroupContent>
               </SidebarGroup>
             )}
