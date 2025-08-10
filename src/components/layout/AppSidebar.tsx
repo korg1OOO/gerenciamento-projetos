@@ -97,29 +97,29 @@ export function AppSidebar() {
 
   // Determinar largura da sidebar baseada no dispositivo e estado
   const getSidebarWidth = () => {
-    if (isMobile) return collapsed ? "w-0" : "w-72"; // Adjust for offcanvas (hidden when collapsed)
+    if (isMobile) return collapsed ? "w-0" : "w-72";
     if (isTablet) return collapsed ? "w-16" : "w-56";
     return collapsed ? "w-16" : "w-72";
   };
 
   // Conditional variant and collapsible for mobile responsiveness
   const sidebarVariant = isMobile ? "floating" : "sidebar";
-  const sidebarCollapsible = isMobile ? "offcanvas" : "icon";
+  const sidebarCollapsible = isMobile ? "offcanvas" : "none"; // Force expanded on non-mobile
 
   return (
     <Sidebar 
-      className={`${getSidebarWidth()} border-r border-border bg-background dark:bg-background shadow-subtle transition-all duration-300`}
+      className={`${getSidebarWidth()} border-r border-sidebar-border shadow-subtle transition-all duration-300`} // Removed bg-background overrides
       collapsible={sidebarCollapsible}
       variant={sidebarVariant}
     >
-      <SidebarHeader className="border-b border-border p-4 bg-background dark:bg-background">
+      <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary shadow-sm">
-            <Building2 className="h-6 w-6 text-primary-foreground" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary shadow-sm">
+            <Building2 className="h-6 w-6 text-sidebar-primary-foreground" />
           </div>
           {!collapsed && (
             <div>
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 className="text-lg font-semibold text-sidebar-foreground">
                 Gestão Pro
               </h2>
               <p className="text-sm text-muted-foreground">
@@ -130,7 +130,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-3 md:p-4 bg-background dark:bg-background overflow-y-auto">
+      <SidebarContent className="p-3 md:p-4 overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
             Menu Principal
@@ -144,18 +144,20 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-fast hover:bg-accent group ${
+                        `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-fast hover:bg-sidebar-accent group ${
                           isActive
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-foreground hover:text-accent-foreground"
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                            : "text-sidebar-foreground hover:text-sidebar-accent-foreground"
                         }`
                       }
                     >
-                      <item.icon className="h-5 w-5 shrink-0 text-foreground" /> {/* Explicit color for better visibility */}
+                      <item.icon className="h-5 w-5 shrink-0 text-sidebar-foreground" />
                       {!collapsed && (
                         <>
-                          <span className="flex-1 font-medium truncate">{item.title}</span>
-                          <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-fast" />
+                          <span className="flex-1 font-medium truncate text-sidebar-foreground">
+                            {item.title}
+                          </span>
+                          <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-fast text-muted-foreground" />
                         </>
                       )}
                     </NavLink>
@@ -168,7 +170,7 @@ export function AppSidebar() {
 
         {!collapsed && (
           <>
-            <Separator className="my-4 bg-border" />
+            <Separator className="my-4 bg-sidebar-border" />
             
             {/* Informações do Usuário */}
             {currentUser && (
@@ -177,12 +179,12 @@ export function AppSidebar() {
                   Usuário Atual
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
-                  <div className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg shadow-subtle">
-                    <div className={`h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center`}>
+                  <div className="flex items-center gap-3 p-3 bg-sidebar-accent/50 rounded-lg shadow-subtle">
+                    <div className={`h-8 w-8 rounded-full bg-sidebar-primary/10 flex items-center justify-center`}>
                       <RoleIcon className={`h-4 w-4 ${getRoleColor()}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
+                      <p className="text-sm font-medium text-sidebar-foreground truncate">
                         {currentUser.name}
                       </p>
                       <p className="text-xs text-muted-foreground capitalize">
@@ -196,7 +198,7 @@ export function AppSidebar() {
 
             {!isMobile && (
               <>
-                <Separator className="my-4 bg-border" />
+                <Separator className="my-4 bg-sidebar-border" />
                 
                 <SidebarGroup>
                   <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
@@ -206,7 +208,7 @@ export function AppSidebar() {
                     {currentUser?.permissions.canEditOperations && (
                       <Button 
                         size="sm" 
-                        className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 shadow-sm rounded-lg text-xs"
+                        className="w-full justify-start gap-2 bg-sidebar-primary hover:bg-sidebar-primary/90 shadow-sm rounded-lg text-xs text-sidebar-primary-foreground"
                         onClick={() => navigate('/operacoes?action=new')}
                       >
                         <Plus className="h-4 w-4" />
@@ -216,7 +218,7 @@ export function AppSidebar() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="w-full justify-start gap-2 rounded-lg text-xs"
+                      className="w-full justify-start gap-2 rounded-lg text-xs text-sidebar-foreground border-sidebar-border"
                       onClick={() => navigate('/financeiro?action=new')}
                     >
                       <Plus className="h-4 w-4" />
@@ -225,7 +227,7 @@ export function AppSidebar() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="w-full justify-start gap-2 rounded-lg text-xs"
+                      className="w-full justify-start gap-2 rounded-lg text-xs text-sidebar-foreground border-sidebar-border"
                       onClick={() => navigate('/agenda?action=new')}
                     >
                       <Plus className="h-4 w-4" />
@@ -235,7 +237,7 @@ export function AppSidebar() {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="w-full justify-start gap-2 rounded-lg text-xs"
+                        className="w-full justify-start gap-2 rounded-lg text-xs text-sidebar-foreground border-sidebar-border"
                         onClick={() => navigate('/usuarios?action=new')}
                       >
                         <Plus className="h-4 w-4" />
