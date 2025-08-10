@@ -108,21 +108,21 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className={`${getSidebarWidth()} border-r border-sidebar-border bg-sidebar dark:bg-sidebar shadow-subtle transition-all duration-300`}
+      className={`${getSidebarWidth()} border-r border-border bg-background dark:bg-background shadow-subtle transition-all duration-300`}
       collapsible={sidebarCollapsible}
       variant={sidebarVariant}
     >
-      <SidebarHeader className="border-b border-sidebar-border p-4 bg-sidebar dark:bg-sidebar">
+      <SidebarHeader className="border-b border-border p-4 bg-background dark:bg-background">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary shadow-sm">
             <Building2 className="h-6 w-6 text-primary-foreground" />
           </div>
           {!collapsed && (
             <div>
-              <h2 className="text-lg font-semibold text-sidebar-foreground">
+              <h2 className="text-lg font-semibold text-foreground">
                 Gestão Pro
               </h2>
-              <p className="text-sm text-sidebar-foreground/70">
+              <p className="text-sm text-muted-foreground">
                 Sistema Empresarial
               </p>
             </div>
@@ -130,9 +130,9 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-3 md:p-4 bg-sidebar dark:bg-sidebar overflow-y-auto">
+      <SidebarContent className="p-3 md:p-4 bg-background dark:bg-background overflow-y-auto">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider mb-3 px-2">
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
             Menu Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -144,10 +144,10 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-fast hover:bg-sidebar-accent group ${
+                        `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-fast hover:bg-accent group ${
                           isActive
                             ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-sidebar-foreground hover:text-sidebar-accent-foreground"
+                            : "text-foreground hover:text-accent-foreground"
                         }`
                       }
                     >
@@ -168,24 +168,24 @@ export function AppSidebar() {
 
         {!collapsed && (
           <>
-            <Separator className="my-4 bg-sidebar-border" />
+            <Separator className="my-4 bg-border" />
             
             {/* Informações do Usuário */}
             {currentUser && (
               <SidebarGroup>
-                <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider mb-3 px-2">
+                <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
                   Usuário Atual
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
-                  <div className="flex items-center gap-3 p-3 bg-sidebar-accent/50 rounded-lg shadow-subtle">
+                  <div className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg shadow-subtle">
                     <div className={`h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center`}>
                       <RoleIcon className={`h-4 w-4 ${getRoleColor()}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-sidebar-foreground truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {currentUser.name}
                       </p>
-                      <p className="text-xs text-sidebar-foreground/70 capitalize">
+                      <p className="text-xs text-muted-foreground capitalize">
                         {currentUser.role}
                       </p>
                     </div>
@@ -196,10 +196,10 @@ export function AppSidebar() {
 
             {!isMobile && (
               <>
-                <Separator className="my-4 bg-sidebar-border" />
+                <Separator className="my-4 bg-border" />
                 
                 <SidebarGroup>
-                  <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider mb-3 px-2">
+                  <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
                     Ações Rápidas
                   </SidebarGroupLabel>
                   <SidebarGroupContent className="space-y-2">
