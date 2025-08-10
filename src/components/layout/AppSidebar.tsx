@@ -46,14 +46,14 @@ const mainNavItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, openMobile } = useSidebar();
   const { currentUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
-  const collapsed = state === "collapsed";
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
+  const collapsed = isMobile ? !openMobile : state === "collapsed";
 
   const isActive = (path: string) => currentPath === path;
 
