@@ -33,19 +33,19 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement;
 
-    root.classList.remove("dark");
+    root.classList.remove("light", "dark");
 
+    let activeTheme = theme;
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      if (systemTheme === "dark") {
-        root.classList.add("dark");
-      }
-      return;
+      activeTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
 
-    if (theme === "dark") {
-      root.classList.add("dark");
-    }
+    root.classList.add(activeTheme);
+
+    // Forçar re-render para garantir que os estilos sejam aplicados
+    document.body.style.display = 'none';
+    document.body.offsetHeight; // trigger reflow
+    document.body.style.display = '';
   }, [theme]);
 
   // Adicionar listener para mudanças de tema do sistema
@@ -54,11 +54,13 @@ export function ThemeProvider({
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       const handleChange = () => {
         const root = window.document.documentElement;
-        if (mediaQuery.matches) {
-          root.classList.add("dark");
-        } else {
-          root.classList.remove("dark");
-        }
+        root.classList.remove("light", "dark");
+        root.classList.add(mediaQuery.matches ? "dark" : "light");
+
+        // Forçar re-render para garantir que os estilos sejam aplicados
+        document.body.style.display = 'none';
+        document.body.offsetHeight; // trigger reflow
+        document.body.style.display = '';
       };
 
       mediaQuery.addEventListener("change", handleChange);
