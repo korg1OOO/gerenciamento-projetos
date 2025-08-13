@@ -24,6 +24,7 @@ const allowedOrigins = [
 ];
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
+        console.log('Incoming origin:', origin); // For debugging
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         }
@@ -32,7 +33,10 @@ app.use((0, cors_1.default)({
         }
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
+app.options('*', (0, cors_1.default)());
 app.use(express_1.default.json());
 app.use('/api/auth', authRoutes_1.default);
 app.use('/api/users', userRoutes_1.default);
