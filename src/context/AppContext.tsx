@@ -3,6 +3,22 @@ import { useProfile } from './ProfileContext';
 import { Operation, Expense, Task, Client } from './AppContext';
 import { useAuth } from './AuthContext';
 
+// Assuming these are added to types.ts
+interface ExpenseCategoryItem {
+  id: string;
+  name: string;
+  type: string;
+  createdBy: string;
+  createdAt: Date;
+}
+
+interface OperationTypeItem {
+  id: string;
+  name: string;
+  createdBy: string;
+  createdAt: Date;
+}
+
 interface AppContextType {
   operations: Operation[];
   addOperation: (operation: Omit<Operation, 'id' | 'createdAt' | 'createdBy'>) => Promise<void>;
@@ -20,12 +36,20 @@ interface AppContextType {
   addClient: (client: Omit<Client, 'id' | 'createdAt' | 'createdBy'>) => Promise<void>;
   updateClient: (id: string, updates: Partial<Client>) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
+  expenseCategories: ExpenseCategoryItem[];
+  addExpenseCategory: (category: Omit<ExpenseCategoryItem, 'id' | 'createdAt' | 'createdBy'>) => Promise<void>;
+  updateExpenseCategory: (id: string, updates: Partial<ExpenseCategoryItem>) => Promise<void>;
+  deleteExpenseCategory: (id: string) => Promise<void>;
+  operationTypes: OperationTypeItem[];
+  addOperationType: (opType: Omit<OperationTypeItem, 'id' | 'createdAt' | 'createdBy'>) => Promise<void>;
+  updateOperationType: (id: string, updates: Partial<OperationTypeItem>) => Promise<void>;
+  deleteOperationType: (id: string) => Promise<void>;
   fetchData: () => Promise<void>; // Expose fetchData for manual refresh if needed
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/backend';
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { activeProfile } = useProfile();
@@ -34,6 +58,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategoryItem[]>([]);
+  const [operationTypes, setOperationTypes] = useState<OperationTypeItem[]>([]);
 
   const getToken = () => localStorage.getItem('token') || sessionStorage.getItem('token');
 
@@ -45,36 +71,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const [operationsRes, expensesRes, tasksRes, clientsRes] = await Promise.all([
+      const [operationsRes, expensesRes, tasksRes, clientsRes, categoriesRes, opTypesRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/operations`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/api/expenses`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/api/tasks`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/api/clients`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/api/expense-categories`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/api/operation-types`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       if (operationsRes.ok) {
         const data = await operationsRes.json();
         console.log('Operations fetched:', data); // Debug log
         setOperations(data);
-      } else {
-        console.error('Failed to fetch operations:', operationsRes.status);
       }
-      if (expensesRes.ok) {
-        setExpenses(await expensesRes.json());
-      } else {
-        console.error('Failed to fetch expenses:', expensesRes.status);
-      }
+      if (expensesRes.ok) setExpenses(await expensesRes.json());
       if (tasksRes.ok) setTasks(await tasksRes.json());
       if (clientsRes.ok) setClients(await clientsRes.json());
+      if (categoriesRes.ok) setExpenseCategories(await categoriesRes.json());
+      if (opTypesRes.ok) setOperationTypes(await opTypesRes.json());
     } catch (error) {
       console.error('Error fetching data:', error);
     }
   };
 
   useEffect(() => {
-    if (currentUser) {
-      fetchData();
-    }
+    fetchData();
   }, [currentUser]); // Fetch data when currentUser changes (login/logout)
 
   const addOperation = async (operation: Omit<Operation, 'id' | 'createdAt' | 'createdBy'>) => {
@@ -89,15 +111,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ ...operation, profile: operation.profile || activeProfile }),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add operation');
+      if (response.ok) {
+        const newOperation = await response.json();
+        setOperations((prev) => [...prev, newOperation]);
       }
-      const newOperation = await response.json();
-      setOperations((prev) => [...prev, newOperation]);
     } catch (error) {
       console.error('Error adding operation:', error);
-      throw error;
     }
   };
 
@@ -113,15 +132,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify(updates),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update operation');
+      if (response.ok) {
+        const updatedOperation = await response.json();
+        setOperations((prev) => prev.map((op) => (op.id === id ? updatedOperation : op)));
       }
-      const updatedOperation = await response.json();
-      setOperations((prev) => prev.map((op) => (op.id === id ? updatedOperation : op)));
     } catch (error) {
       console.error('Error updating operation:', error);
-      throw error;
     }
   };
 
@@ -133,14 +149,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete operation');
+      if (response.ok) {
+        setOperations((prev) => prev.filter((op) => op.id !== id));
       }
-      setOperations((prev) => prev.filter((op) => op.id !== id));
     } catch (error) {
       console.error('Error deleting operation:', error);
-      throw error;
     }
   };
 
@@ -156,25 +169,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const token = getToken();
       if (!token) throw new Error('No token available');
-      const profileToUse = expense.profile || activeProfile;
-      console.log('Adding expense with profile:', profileToUse);
       const response = await fetch(`${API_BASE_URL}/api/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...expense, date: finalDate, profile: profileToUse }),
+        body: JSON.stringify({ ...expense, date: finalDate, profile: expense.profile || activeProfile }),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add expense');
+      if (response.ok) {
+        const newExpense = await response.json();
+        setExpenses((prev) => [...prev, newExpense]);
       }
-      const newExpense = await response.json();
-      setExpenses((prev) => [...prev, newExpense]);
     } catch (error) {
       console.error('Error adding expense:', error);
-      throw error;
     }
   };
 
@@ -198,15 +206,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ ...updates, date: finalDate }),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update expense');
+      if (response.ok) {
+        const updatedExpense = await response.json();
+        setExpenses((prev) => prev.map((exp) => (exp.id === id ? updatedExpense : exp)));
       }
-      const updatedExpense = await response.json();
-      setExpenses((prev) => prev.map((exp) => (exp.id === id ? updatedExpense : exp)));
     } catch (error) {
       console.error('Error updating expense:', error);
-      throw error;
     }
   };
 
@@ -218,14 +223,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete expense');
+      if (response.ok) {
+        setExpenses((prev) => prev.filter((exp) => exp.id !== id));
       }
-      setExpenses((prev) => prev.filter((exp) => exp.id !== id));
     } catch (error) {
       console.error('Error deleting expense:', error);
-      throw error;
     }
   };
 
@@ -249,15 +251,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ ...task, date: finalDate, profile: task.profile || activeProfile }),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add task');
+      if (response.ok) {
+        const newTask = await response.json();
+        setTasks((prev) => [...prev, newTask]);
       }
-      const newTask = await response.json();
-      setTasks((prev) => [...prev, newTask]);
     } catch (error) {
       console.error('Error adding task:', error);
-      throw error;
     }
   };
 
@@ -281,15 +280,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ ...updates, date: finalDate }),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update task');
+      if (response.ok) {
+        const updatedTask = await response.json();
+        setTasks((prev) => prev.map((task) => (task.id === id ? updatedTask : task)));
       }
-      const updatedTask = await response.json();
-      setTasks((prev) => prev.map((task) => (task.id === id ? updatedTask : task)));
     } catch (error) {
       console.error('Error updating task:', error);
-      throw error;
     }
   };
 
@@ -301,14 +297,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete task');
+      if (response.ok) {
+        setTasks((prev) => prev.filter((task) => task.id !== id));
       }
-      setTasks((prev) => prev.filter((task) => task.id !== id));
     } catch (error) {
       console.error('Error deleting task:', error);
-      throw error;
     }
   };
 
@@ -324,15 +317,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ ...client, profile: client.profile || activeProfile }),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add client');
+      if (response.ok) {
+        const newClient = await response.json();
+        setClients((prev) => [...prev, newClient]);
       }
-      const newClient = await response.json();
-      setClients((prev) => [...prev, newClient]);
     } catch (error) {
       console.error('Error adding client:', error);
-      throw error;
     }
   };
 
@@ -348,15 +338,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify(updates),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update client');
+      if (response.ok) {
+        const updatedClient = await response.json();
+        setClients((prev) => prev.map((client) => (client.id === id ? updatedClient : client)));
       }
-      const updatedClient = await response.json();
-      setClients((prev) => prev.map((client) => (client.id === id ? updatedClient : client)));
     } catch (error) {
       console.error('Error updating client:', error);
-      throw error;
     }
   };
 
@@ -368,14 +355,129 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete client');
+      if (response.ok) {
+        setClients((prev) => prev.filter((client) => client.id !== id));
       }
-      setClients((prev) => prev.filter((client) => client.id !== id));
     } catch (error) {
       console.error('Error deleting client:', error);
-      throw error;
+    }
+  };
+
+  // Expense Categories CRUD
+  const addExpenseCategory = async (category: Omit<ExpenseCategoryItem, 'id' | 'createdAt' | 'createdBy'>) => {
+    try {
+      const token = getToken();
+      if (!token) throw new Error('No token available');
+      const response = await fetch(`${API_BASE_URL}/api/expense-categories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(category),
+      });
+      if (response.ok) {
+        const newCategory = await response.json();
+        setExpenseCategories((prev) => [...prev, newCategory]);
+      }
+    } catch (error) {
+      console.error('Error adding expense category:', error);
+    }
+  };
+
+  const updateExpenseCategory = async (id: string, updates: Partial<ExpenseCategoryItem>) => {
+    try {
+      const token = getToken();
+      if (!token) throw new Error('No token available');
+      const response = await fetch(`${API_BASE_URL}/api/expense-categories/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+      if (response.ok) {
+        const updatedCategory = await response.json();
+        setExpenseCategories((prev) => prev.map((cat) => (cat.id === id ? updatedCategory : cat)));
+      }
+    } catch (error) {
+      console.error('Error updating expense category:', error);
+    }
+  };
+
+  const deleteExpenseCategory = async (id: string) => {
+    try {
+      const token = getToken();
+      if (!token) throw new Error('No token available');
+      const response = await fetch(`${API_BASE_URL}/api/expense-categories/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        setExpenseCategories((prev) => prev.filter((cat) => cat.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting expense category:', error);
+    }
+  };
+
+  // Operation Types CRUD
+  const addOperationType = async (opType: Omit<OperationTypeItem, 'id' | 'createdAt' | 'createdBy'>) => {
+    try {
+      const token = getToken();
+      if (!token) throw new Error('No token available');
+      const response = await fetch(`${API_BASE_URL}/api/operation-types`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(opType),
+      });
+      if (response.ok) {
+        const newType = await response.json();
+        setOperationTypes((prev) => [...prev, newType]);
+      }
+    } catch (error) {
+      console.error('Error adding operation type:', error);
+    }
+  };
+
+  const updateOperationType = async (id: string, updates: Partial<OperationTypeItem>) => {
+    try {
+      const token = getToken();
+      if (!token) throw new Error('No token available');
+      const response = await fetch(`${API_BASE_URL}/api/operation-types/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+      if (response.ok) {
+        const updatedType = await response.json();
+        setOperationTypes((prev) => prev.map((type) => (type.id === id ? updatedType : type)));
+      }
+    } catch (error) {
+      console.error('Error updating operation type:', error);
+    }
+  };
+
+  const deleteOperationType = async (id: string) => {
+    try {
+      const token = getToken();
+      if (!token) throw new Error('No token available');
+      const response = await fetch(`${API_BASE_URL}/api/operation-types/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        setOperationTypes((prev) => prev.filter((type) => type.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting operation type:', error);
     }
   };
 
@@ -403,6 +505,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addClient,
         updateClient,
         deleteClient,
+        expenseCategories,
+        addExpenseCategory,
+        updateExpenseCategory,
+        deleteExpenseCategory,
+        operationTypes,
+        addOperationType,
+        updateOperationType,
+        deleteOperationType,
         fetchData, // Expose fetchData for manual use if needed
       }}
     >
