@@ -15,14 +15,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCurrentUser = exports.login = exports.register = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const User_1 = __importDefault(require("../models/User"));
 const express_validator_1 = require("express-validator");
+const User_1 = __importDefault(require("../models/User"));
+const mapUserToResponse = (user) => ({
+    id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    permissions: user.permissions,
+    createdAt: user.createdAt,
+    lastLogin: user.lastLogin,
+});
 exports.register = [
+    (0, express_validator_1.body)('email').isEmail().withMessage('Invalid email'),
+    (0, express_validator_1.body)('password').notEmpty().withMessage('Password is required'),
+    (0, express_validator_1.body)('name').notEmpty().withMessage('Name is required'),
+    (0, express_validator_1.body)('role').isIn(['admin', 'gestor', 'colaborador']).withMessage('Invalid role'),
     (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-        console.log('Register request received:', req.body); // Log incoming request
+        console.log('Register request received:', req.body);
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
-            console.log('Validation errors:', errors.array()); // Log validation errors
+            console.log('Validation errors:', errors.array());
             return res.status(400).json({ errors: errors.array() });
         }
         const { name, email, password, role } = req.body;
@@ -49,9 +62,9 @@ exports.register = [
             });
             yield user.save();
             const token = jsonwebtoken_1.default.sign({ userId: user._id }, process.env.JWT_SECRET, {
-                expiresIn: '1h',
+                expiresIn: '30d',
             });
-            res.status(201).json({ token, user: Object.assign(Object.assign({}, user.toJSON()), { password: undefined }) });
+            res.status(201).json({ token, user: mapUserToResponse(user) });
         }
         catch (error) {
             console.error('Register error:', error);
@@ -63,13 +76,13 @@ exports.login = [
     (0, express_validator_1.body)('email').isEmail().withMessage('Invalid email'),
     (0, express_validator_1.body)('password').notEmpty().withMessage('Password is required'),
     (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-        console.log('Login request received:', req.body); // Log incoming request
+        console.log('Login request received:', req.body);
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
-            console.log('Validation errors:', errors.array()); // Log validation errors
+            console.log('Validation errors:', errors.array());
             return res.status(400).json({ errors: errors.array() });
         }
-        const { email, password } = req.body;
+        const { email, password, rememberMe } = req.body;
         try {
             const user = yield User_1.default.findOne({ email });
             if (!user) {
@@ -83,10 +96,11 @@ exports.login = [
             }
             user.lastLogin = new Date();
             yield user.save();
+            const expiresIn = rememberMe ? '30d' : '1h';
             const token = jsonwebtoken_1.default.sign({ userId: user._id }, process.env.JWT_SECRET, {
-                expiresIn: '1h',
+                expiresIn,
             });
-            res.json({ token, user: Object.assign(Object.assign({}, user.toJSON()), { password: undefined }) });
+            res.json({ token, user: mapUserToResponse(user) });
         }
         catch (error) {
             console.error('Login error:', error);
@@ -99,7 +113,7 @@ const getCurrentUser = (req, res) => __awaiter(void 0, void 0, void 0, function*
         if (!req.user) {
             return res.status(401).json({ message: 'No user authenticated' });
         }
-        res.json(req.user);
+        res.json(mapUserToResponse(req.user));
     }
     catch (error) {
         console.error('Get current user error:', error);
