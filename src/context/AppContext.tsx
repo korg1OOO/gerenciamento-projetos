@@ -25,7 +25,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/backend';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { activeProfile } = useProfile();
@@ -56,8 +56,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const data = await operationsRes.json();
         console.log('Operations fetched:', data); // Debug log
         setOperations(data);
+      } else {
+        console.error('Failed to fetch operations:', operationsRes.status);
       }
-      if (expensesRes.ok) setExpenses(await expensesRes.json());
+      if (expensesRes.ok) {
+        setExpenses(await expensesRes.json());
+      } else {
+        console.error('Failed to fetch expenses:', expensesRes.status);
+      }
       if (tasksRes.ok) setTasks(await tasksRes.json());
       if (clientsRes.ok) setClients(await clientsRes.json());
     } catch (error) {
@@ -66,7 +72,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    fetchData();
+    if (currentUser) {
+      fetchData();
+    }
   }, [currentUser]); // Fetch data when currentUser changes (login/logout)
 
   const addOperation = async (operation: Omit<Operation, 'id' | 'createdAt' | 'createdBy'>) => {
@@ -81,12 +89,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ ...operation, profile: operation.profile || activeProfile }),
       });
-      if (response.ok) {
-        const newOperation = await response.json();
-        setOperations((prev) => [...prev, newOperation]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add operation');
       }
+      const newOperation = await response.json();
+      setOperations((prev) => [...prev, newOperation]);
     } catch (error) {
       console.error('Error adding operation:', error);
+      throw error;
     }
   };
 
@@ -102,12 +113,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify(updates),
       });
-      if (response.ok) {
-        const updatedOperation = await response.json();
-        setOperations((prev) => prev.map((op) => (op.id === id ? updatedOperation : op)));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update operation');
       }
+      const updatedOperation = await response.json();
+      setOperations((prev) => prev.map((op) => (op.id === id ? updatedOperation : op)));
     } catch (error) {
       console.error('Error updating operation:', error);
+      throw error;
     }
   };
 
@@ -119,11 +133,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.ok) {
-        setOperations((prev) => prev.filter((op) => op.id !== id));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete operation');
       }
+      setOperations((prev) => prev.filter((op) => op.id !== id));
     } catch (error) {
       console.error('Error deleting operation:', error);
+      throw error;
     }
   };
 
@@ -139,20 +156,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const token = getToken();
       if (!token) throw new Error('No token available');
+      const profileToUse = expense.profile || activeProfile;
+      console.log('Adding expense with profile:', profileToUse);
       const response = await fetch(`${API_BASE_URL}/api/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...expense, date: finalDate, profile: expense.profile || activeProfile }),
+        body: JSON.stringify({ ...expense, date: finalDate, profile: profileToUse }),
       });
-      if (response.ok) {
-        const newExpense = await response.json();
-        setExpenses((prev) => [...prev, newExpense]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add expense');
       }
+      const newExpense = await response.json();
+      setExpenses((prev) => [...prev, newExpense]);
     } catch (error) {
       console.error('Error adding expense:', error);
+      throw error;
     }
   };
 
@@ -176,12 +198,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ ...updates, date: finalDate }),
       });
-      if (response.ok) {
-        const updatedExpense = await response.json();
-        setExpenses((prev) => prev.map((exp) => (exp.id === id ? updatedExpense : exp)));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update expense');
       }
+      const updatedExpense = await response.json();
+      setExpenses((prev) => prev.map((exp) => (exp.id === id ? updatedExpense : exp)));
     } catch (error) {
       console.error('Error updating expense:', error);
+      throw error;
     }
   };
 
@@ -193,11 +218,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.ok) {
-        setExpenses((prev) => prev.filter((exp) => exp.id !== id));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete expense');
       }
+      setExpenses((prev) => prev.filter((exp) => exp.id !== id));
     } catch (error) {
       console.error('Error deleting expense:', error);
+      throw error;
     }
   };
 
@@ -221,12 +249,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ ...task, date: finalDate, profile: task.profile || activeProfile }),
       });
-      if (response.ok) {
-        const newTask = await response.json();
-        setTasks((prev) => [...prev, newTask]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add task');
       }
+      const newTask = await response.json();
+      setTasks((prev) => [...prev, newTask]);
     } catch (error) {
       console.error('Error adding task:', error);
+      throw error;
     }
   };
 
@@ -250,12 +281,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ ...updates, date: finalDate }),
       });
-      if (response.ok) {
-        const updatedTask = await response.json();
-        setTasks((prev) => prev.map((task) => (task.id === id ? updatedTask : task)));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update task');
       }
+      const updatedTask = await response.json();
+      setTasks((prev) => prev.map((task) => (task.id === id ? updatedTask : task)));
     } catch (error) {
       console.error('Error updating task:', error);
+      throw error;
     }
   };
 
@@ -267,11 +301,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.ok) {
-        setTasks((prev) => prev.filter((task) => task.id !== id));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete task');
       }
+      setTasks((prev) => prev.filter((task) => task.id !== id));
     } catch (error) {
       console.error('Error deleting task:', error);
+      throw error;
     }
   };
 
@@ -287,12 +324,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ ...client, profile: client.profile || activeProfile }),
       });
-      if (response.ok) {
-        const newClient = await response.json();
-        setClients((prev) => [...prev, newClient]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add client');
       }
+      const newClient = await response.json();
+      setClients((prev) => [...prev, newClient]);
     } catch (error) {
       console.error('Error adding client:', error);
+      throw error;
     }
   };
 
@@ -308,12 +348,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify(updates),
       });
-      if (response.ok) {
-        const updatedClient = await response.json();
-        setClients((prev) => prev.map((client) => (client.id === id ? updatedClient : client)));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update client');
       }
+      const updatedClient = await response.json();
+      setClients((prev) => prev.map((client) => (client.id === id ? updatedClient : client)));
     } catch (error) {
       console.error('Error updating client:', error);
+      throw error;
     }
   };
 
@@ -325,11 +368,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.ok) {
-        setClients((prev) => prev.filter((client) => client.id !== id));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete client');
       }
+      setClients((prev) => prev.filter((client) => client.id !== id));
     } catch (error) {
       console.error('Error deleting client:', error);
+      throw error;
     }
   };
 
