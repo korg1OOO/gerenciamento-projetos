@@ -8,6 +8,8 @@ import operationRoutes from './routes/operationRoutes';
 import expenseRoutes from './routes/expenseRoutes';
 import taskRoutes from './routes/taskRoutes';
 import clientRoutes from './routes/clientRoutes';
+import expenseCategoryRoutes from './routes/expenseCategoryRoutes';
+import operationTypeRoutes from './routes/operationTypeRoutes';
 
 dotenv.config();
 connectDB();
@@ -37,6 +39,8 @@ app.use('/api/operations', operationRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/clients', clientRoutes);
+app.use('/api/expense-categories', expenseCategoryRoutes);
+app.use('/api/operation-types', operationTypeRoutes);
 
 const PORT = process.env.PORT || 8081;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
