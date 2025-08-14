@@ -19,7 +19,7 @@ interface ExpenseModalProps {
 }
 
 export function ExpenseModal({ open, onOpenChange, expense, mode }: ExpenseModalProps) {
-  const { addExpense, updateExpense, operations } = useApp();
+  const { addExpense, updateExpense, operations, expenseCategories } = useApp();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -160,12 +160,22 @@ export function ExpenseModal({ open, onOpenChange, expense, mode }: ExpenseModal
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="infra">Infraestrutura</SelectItem>
-                <SelectItem value="equipe">Equipe</SelectItem>
-                <SelectItem value="ferramentas">Ferramentas</SelectItem>
-                <SelectItem value="marketing">Marketing</SelectItem>
-                <SelectItem value="juridico">Jurídico</SelectItem>
-                <SelectItem value="outro">Outro</SelectItem>
+                {expenseCategories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.name.toLowerCase() as ExpenseCategory}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+                {/* Fallback defaults if no categories fetched */}
+                {expenseCategories.length === 0 && (
+                  <>
+                    <SelectItem value="infra">Infraestrutura</SelectItem>
+                    <SelectItem value="equipe">Equipe</SelectItem>
+                    <SelectItem value="ferramentas">Ferramentas</SelectItem>
+                    <SelectItem value="marketing">Marketing</SelectItem>
+                    <SelectItem value="juridico">Jurídico</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
