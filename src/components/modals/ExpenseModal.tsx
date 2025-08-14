@@ -18,6 +18,15 @@ interface ExpenseModalProps {
   mode: 'create' | 'edit';
 }
 
+const defaultCategories = [
+  { value: 'infra', label: 'Infraestrutura' },
+  { value: 'equipe', label: 'Equipe' },
+  { value: 'ferramentas', label: 'Ferramentas' },
+  { value: 'marketing', label: 'Marketing' },
+  { value: 'juridico', label: 'Jurídico' },
+  { value: 'outro', label: 'Outro' }
+];
+
 export function ExpenseModal({ open, onOpenChange, expense, mode }: ExpenseModalProps) {
   const { addExpense, updateExpense, operations, expenseCategories } = useApp();
   const { toast } = useToast();
@@ -160,22 +169,18 @@ export function ExpenseModal({ open, onOpenChange, expense, mode }: ExpenseModal
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                {/* Always show default categories */}
+                {defaultCategories.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+                {/* Add custom categories from backend */}
                 {expenseCategories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.name.toLowerCase() as ExpenseCategory}>
                     {cat.name}
                   </SelectItem>
                 ))}
-                {/* Fallback defaults if no categories fetched */}
-                {expenseCategories.length === 0 && (
-                  <>
-                    <SelectItem value="infra">Infraestrutura</SelectItem>
-                    <SelectItem value="equipe">Equipe</SelectItem>
-                    <SelectItem value="ferramentas">Ferramentas</SelectItem>
-                    <SelectItem value="marketing">Marketing</SelectItem>
-                    <SelectItem value="juridico">Jurídico</SelectItem>
-                    <SelectItem value="outro">Outro</SelectItem>
-                  </>
-                )}
               </SelectContent>
             </Select>
           </div>
