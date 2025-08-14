@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useApp } from "@/context/AppContext"; // Import your AppContext
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +51,7 @@ interface SystemSettings {
 
 export default function ConfiguracoesAvancadas() {
   const { currentUser, users } = useAuth();
+  const { expenseCategories, deleteExpenseCategory, operationTypes, deleteOperationType } = useApp(); // Use context (add addExpenseCategory etc. if needed for creation)
   const { toast } = useToast();
   
   const [settings, setSettings] = useState<SystemSettings>({
@@ -76,21 +78,6 @@ export default function ConfiguracoesAvancadas() {
     }
   });
 
-  const [categories, setCategories] = useState([
-    { id: '1', name: 'Infraestrutura', color: '#3b82f6' },
-    { id: '2', name: 'Equipe', color: '#10b981' },
-    { id: '3', name: 'Ferramentas', color: '#8b5cf6' },
-    { id: '4', name: 'Marketing', color: '#f59e0b' },
-    { id: '5', name: 'Jurídico', color: '#ef4444' }
-  ]);
-
-  const [operationTypes, setOperationTypes] = useState([
-    { id: '1', name: 'SaaS', icon: 'Zap' },
-    { id: '2', name: 'Produto', icon: 'Package' },
-    { id: '3', name: 'Loja', icon: 'Store' },
-    { id: '4', name: 'Serviço', icon: 'Tool' }
-  ]);
-
   const isAdmin = currentUser?.role === 'admin';
 
   const handleSaveSettings = () => {
@@ -115,6 +102,22 @@ export default function ConfiguracoesAvancadas() {
       title: "Importação realizada",
       description: "Dados importados com sucesso!"
     });
+  };
+
+  const removeCategory = async (id: string) => {
+    try {
+      await deleteExpenseCategory(id);
+      toast({
+        title: "Categoria removida",
+        description: "Categoria excluída com sucesso!"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao remover categoria",
+        variant: "destructive"
+      });
+    }
   };
 
   if (!isAdmin) {
@@ -393,16 +396,16 @@ export default function ConfiguracoesAvancadas() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map((category) => (
+            {expenseCategories.map((category) => (
               <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <div
                     className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: category.color }}
+                    style={{ backgroundColor: category.color || '#3b82f6' }} // Use color if available
                   />
                   <span>{category.name}</span>
                 </div>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => removeCategory(category.id)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>

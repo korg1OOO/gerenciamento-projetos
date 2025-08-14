@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useApp } from "@/context/AppContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -27,6 +28,7 @@ const defaultOperationTypes = [
 
 export default function Configuracoes() {
   const { toast } = useToast();
+  const { expenseCategories, addExpenseCategory, deleteExpenseCategory, operationTypes, addOperationType: contextAddOperationType, deleteOperationType } = useApp(); // Rename destructured to avoid conflict
   const [permissions, setPermissions] = useState({
     admin: true,
     financial: true,
@@ -40,8 +42,6 @@ export default function Configuracoes() {
     autoSave: true
   });
 
-  const [categories, setCategories] = useState(defaultCategories);
-  const [operationTypes, setOperationTypes] = useState(defaultOperationTypes);
   const [isNewCategoryOpen, setIsNewCategoryOpen] = useState(false);
   const [isNewTypeOpen, setIsNewTypeOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -63,57 +63,76 @@ export default function Configuracoes() {
     });
   };
 
-  const addCategory = () => {
+  const addCategory = async () => {
     if (!newCategoryName.trim()) return;
     
-    const newCategory = {
-      id: Date.now().toString(),
-      name: newCategoryName,
-      type: 'expense'
-    };
-    
-    setCategories(prev => [...prev, newCategory]);
-    setNewCategoryName("");
-    setIsNewCategoryOpen(false);
-    
-    toast({
-      title: "Categoria adicionada",
-      description: `Nova categoria "${newCategoryName}" criada com sucesso!`
-    });
+    try {
+      await addExpenseCategory({ name: newCategoryName, type: 'expense' });
+      setNewCategoryName("");
+      setIsNewCategoryOpen(false);
+      toast({
+        title: "Categoria adicionada",
+        description: `Nova categoria "${newCategoryName}" criada com sucesso!`
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao adicionar categoria",
+        variant: "destructive"
+      });
+    }
   };
 
-  const addOperationType = () => {
+  const handleAddOperationType = async () => {
     if (!newTypeName.trim()) return;
     
-    const newType = {
-      id: Date.now().toString(),
-      name: newTypeName
-    };
-    
-    setOperationTypes(prev => [...prev, newType]);
-    setNewTypeName("");
-    setIsNewTypeOpen(false);
-    
-    toast({
-      title: "Tipo de operação adicionado",
-      description: `Novo tipo "${newTypeName}" criado com sucesso!`
-    });
+    try {
+      await contextAddOperationType({ name: newTypeName });
+      setNewTypeName("");
+      setIsNewTypeOpen(false);
+      toast({
+        title: "Tipo de operação adicionado",
+        description: `Novo tipo "${newTypeName}" criado com sucesso!`
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao adicionar tipo",
+        variant: "destructive"
+      });
+    }
   };
 
-  const removeCategory = (id: string) => {
-    setCategories(prev => prev.filter(cat => cat.id !== id));
-    toast({
-      title: "Categoria removida",
-      description: "Categoria excluída com sucesso!"
-    });
+  const removeCategory = async (id: string) => {
+    try {
+      await deleteExpenseCategory(id);
+      toast({
+        title: "Categoria removida",
+        description: "Categoria excluída com sucesso!"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao remover categoria",
+        variant: "destructive"
+      });
+    }
   };
 
-  const removeOperationType = (id: string) => {
-    setOperationTypes(prev => prev.filter(type => type.id !== id));
-    toast({
-      title: "Tipo removido",
-      description: "Tipo de operação excluído com sucesso!"
-    });
+  const removeOperationType = async (id: string) => {
+    try {
+      await deleteOperationType(id);
+      toast({
+        title: "Tipo removido",
+        description: "Tipo de operação excluído com sucesso!"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao remover tipo",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -268,7 +287,7 @@ export default function Configuracoes() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
+            {expenseCategories.map((category) => (
               <Badge key={category.id} variant="outline" className="flex items-center gap-2">
                 {category.name}
                 <Button
@@ -314,7 +333,7 @@ export default function Configuracoes() {
                   />
                 </div>
                 <div className="flex gap-3">
-                  <Button onClick={addOperationType} className="bg-primary hover:bg-primary/90">
+                  <Button onClick={handleAddOperationType} className="bg-primary hover:bg-primary/90">
                     Adicionar
                   </Button>
                   <Button variant="outline" onClick={() => setIsNewTypeOpen(false)}>
