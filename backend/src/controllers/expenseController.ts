@@ -12,18 +12,9 @@ interface BaseExpenseDocument extends mongoose.Document {
 type ExpenseDocument = BaseExpenseDocument & Omit<ExpenseType, 'id'>;
 
 export const getExpenses = async (req: AuthRequest, res: Response) => {
-  if (!req.user.permissions.canViewFinance) {
-    return res.status(403).json({ message: 'Permission denied' });
-  }
-
   try {
     const user = req.user;
-    let expenses;
-    if (user.role === 'admin') {
-      expenses = await Expense.find().populate('createdBy', 'name email');
-    } else {
-      expenses = await Expense.find({ createdBy: user._id }).populate('createdBy', 'name email');
-    }
+    const expenses = await Expense.find({ createdBy: user._id }).populate('createdBy', 'name email');
     const responseData = expenses.map((exp) => ({
       ...exp.toJSON(),
       id: exp._id.toString(),
@@ -58,7 +49,7 @@ export const updateExpense = async (req: AuthRequest, res: Response) => {
     if (!expense) {
       return res.status(404).json({ message: 'Expense not found' });
     }
-    if (req.user.role !== 'admin' && expense.createdBy.toString() !== req.user._id.toString()) {
+    if (expense.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
     }
     const updatedExpense = await Expense.findByIdAndUpdate(id, updates, { new: true });
@@ -76,7 +67,7 @@ export const deleteExpense = async (req: AuthRequest, res: Response) => {
     if (!expense) {
       return res.status(404).json({ message: 'Expense not found' });
     }
-    if (req.user.role !== 'admin' && expense.createdBy.toString() !== req.user._id.toString()) {
+    if (expense.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
     }
     await Expense.findByIdAndDelete(id);

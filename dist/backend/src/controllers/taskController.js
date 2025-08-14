@@ -17,13 +17,7 @@ const Task_1 = __importDefault(require("../models/Task"));
 const getTasks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.user;
-        let tasks;
-        if (user.role === 'admin') {
-            tasks = yield Task_1.default.find().populate('createdBy', 'name email');
-        }
-        else {
-            tasks = yield Task_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
-        }
+        const tasks = yield Task_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
         const responseData = tasks.map((task) => (Object.assign(Object.assign({}, task.toJSON()), { id: task._id.toString() })));
         res.json(responseData);
     }
@@ -53,7 +47,7 @@ const updateTask = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (!task) {
             return res.status(404).json({ message: 'Task not found' });
         }
-        if (req.user.role !== 'admin' && task.createdBy.toString() !== req.user._id.toString()) {
+        if (task.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         const updatedTask = yield Task_1.default.findByIdAndUpdate(id, updates, { new: true });
@@ -72,7 +66,7 @@ const deleteTask = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (!task) {
             return res.status(404).json({ message: 'Task not found' });
         }
-        if (req.user.role !== 'admin' && task.createdBy.toString() !== req.user._id.toString()) {
+        if (task.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         yield Task_1.default.findByIdAndDelete(id);

@@ -15,42 +15,25 @@ const mapUserToResponse = (user: any) => ({
 
 export const getUsers = async (req: AuthRequest, res: Response) => {
   try {
-    const users = await User.find().select('-password');
-    const mappedUsers = users.map(mapUserToResponse);
-    res.json(mappedUsers);
+    // Only return the current user
+    res.json([mapUserToResponse(req.user)]);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
 
 export const addUser = async (req: AuthRequest, res: Response) => {
-  const { name, email, role, permissions } = req.body;
-  try {
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    user = new User({
-      name,
-      email,
-      password: await bcrypt.hash('default123', 10), // Default password
-      role,
-      permissions,
-      createdAt: new Date(),
-    });
-
-    await user.save();
-    res.status(201).json(mapUserToResponse(user));
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
+  // Disable adding users by non-admins, but since no roles, perhaps disable entirely or allow self-registration, but register is in auth
+  return res.status(403).json({ message: 'Permission denied' });
 };
 
 export const updateUser = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
   try {
+    if (id !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Permission denied' });
+    }
     const user = await User.findByIdAndUpdate(id, updates, { new: true }).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -64,6 +47,9 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
 export const deleteUser = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   try {
+    if (id !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Permission denied' });
+    }
     const user = await User.findByIdAndDelete(id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -75,15 +61,6 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
 };
 
 export const updateUserPermissions = async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
-  const { permissions } = req.body;
-  try {
-    const user = await User.findByIdAndUpdate(id, { permissions }, { new: true }).select('-password');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    res.json(mapUserToResponse(user));
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
+  // Disable since no roles
+  return res.status(403).json({ message: 'Permission denied' });
 };

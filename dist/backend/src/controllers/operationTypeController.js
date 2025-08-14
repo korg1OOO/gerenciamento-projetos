@@ -17,13 +17,7 @@ const OperationType_1 = __importDefault(require("../models/OperationType"));
 const getOperationTypes = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.user;
-        let types;
-        if (user.role === 'admin') {
-            types = yield OperationType_1.default.find().populate('createdBy', 'name email');
-        }
-        else {
-            types = yield OperationType_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
-        }
+        const types = yield OperationType_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
         res.json(types);
     }
     catch (error) {
@@ -32,10 +26,6 @@ const getOperationTypes = (req, res) => __awaiter(void 0, void 0, void 0, functi
 });
 exports.getOperationTypes = getOperationTypes;
 const addOperationType = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    // Optional: restrict to admins
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Permission denied' });
-    }
     const typeData = req.body;
     try {
         const opType = new OperationType_1.default(Object.assign(Object.assign({}, typeData), { createdBy: req.user._id }));
@@ -55,7 +45,7 @@ const updateOperationType = (req, res) => __awaiter(void 0, void 0, void 0, func
         if (!opType) {
             return res.status(404).json({ message: 'Type not found' });
         }
-        if (req.user.role !== 'admin' && opType.createdBy.toString() !== req.user._id.toString()) {
+        if (opType.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         const updatedType = yield OperationType_1.default.findByIdAndUpdate(id, updates, { new: true });
@@ -73,7 +63,7 @@ const deleteOperationType = (req, res) => __awaiter(void 0, void 0, void 0, func
         if (!opType) {
             return res.status(404).json({ message: 'Type not found' });
         }
-        if (req.user.role !== 'admin' && opType.createdBy.toString() !== req.user._id.toString()) {
+        if (opType.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         yield OperationType_1.default.findByIdAndDelete(id);

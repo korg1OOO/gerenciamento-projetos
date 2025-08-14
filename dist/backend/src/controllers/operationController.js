@@ -17,13 +17,7 @@ const Operation_1 = __importDefault(require("../models/Operation"));
 const getOperations = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.user;
-        let operations;
-        if (user.role === 'admin') {
-            operations = yield Operation_1.default.find().populate('createdBy', 'name email');
-        }
-        else {
-            operations = yield Operation_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
-        }
+        const operations = yield Operation_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
         const responseData = operations.map((op) => (Object.assign(Object.assign({}, op.toJSON()), { id: op._id.toString() })));
         res.json(responseData);
     }
@@ -33,9 +27,6 @@ const getOperations = (req, res) => __awaiter(void 0, void 0, void 0, function* 
 });
 exports.getOperations = getOperations;
 const addOperation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!req.user.permissions.canEditOperations) {
-        return res.status(403).json({ message: 'Permission denied' });
-    }
     const operationData = req.body;
     try {
         const operation = new Operation_1.default(Object.assign(Object.assign({}, operationData), { createdBy: req.user._id, createdAt: new Date() }));
@@ -49,9 +40,6 @@ const addOperation = (req, res) => __awaiter(void 0, void 0, void 0, function* (
 });
 exports.addOperation = addOperation;
 const updateOperation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!req.user.permissions.canEditOperations) {
-        return res.status(403).json({ message: 'Permission denied' });
-    }
     const { id } = req.params;
     const updates = req.body;
     try {
@@ -59,7 +47,7 @@ const updateOperation = (req, res) => __awaiter(void 0, void 0, void 0, function
         if (!operation) {
             return res.status(404).json({ message: 'Operation not found' });
         }
-        if (req.user.role !== 'admin' && operation.createdBy.toString() !== req.user._id.toString()) {
+        if (operation.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         const updatedOperation = yield Operation_1.default.findByIdAndUpdate(id, updates, { new: true });
@@ -72,16 +60,13 @@ const updateOperation = (req, res) => __awaiter(void 0, void 0, void 0, function
 });
 exports.updateOperation = updateOperation;
 const deleteOperation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!req.user.permissions.canEditOperations) {
-        return res.status(403).json({ message: 'Permission denied' });
-    }
     const { id } = req.params;
     try {
         const operation = yield Operation_1.default.findById(id);
         if (!operation) {
             return res.status(404).json({ message: 'Operation not found' });
         }
-        if (req.user.role !== 'admin' && operation.createdBy.toString() !== req.user._id.toString()) {
+        if (operation.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         yield Operation_1.default.findByIdAndDelete(id);

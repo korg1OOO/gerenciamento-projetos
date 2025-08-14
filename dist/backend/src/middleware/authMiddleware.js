@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminMiddleware = exports.authMiddleware = void 0;
+exports.authMiddleware = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_1 = __importDefault(require("../models/User"));
 const authMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
@@ -35,12 +35,3 @@ const authMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.authMiddleware = authMiddleware;
-const adminMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    if (req.user && req.user.role === 'admin') {
-        next();
-    }
-    else {
-        res.status(403).json({ message: 'Admin access required' });
-    }
-});
-exports.adminMiddleware = adminMiddleware;

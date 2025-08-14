@@ -13,7 +13,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateUserPermissions = exports.deleteUser = exports.updateUser = exports.addUser = exports.getUsers = void 0;
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const User_1 = __importDefault(require("../models/User"));
 const mapUserToResponse = (user) => ({
     id: user._id.toString(),
@@ -26,9 +25,8 @@ const mapUserToResponse = (user) => ({
 });
 const getUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const users = yield User_1.default.find().select('-password');
-        const mappedUsers = users.map(mapUserToResponse);
-        res.json(mappedUsers);
+        // Only return the current user
+        res.json([mapUserToResponse(req.user)]);
     }
     catch (error) {
         res.status(500).json({ message: 'Server error' });
@@ -36,32 +34,17 @@ const getUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.getUsers = getUsers;
 const addUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, email, role, permissions } = req.body;
-    try {
-        let user = yield User_1.default.findOne({ email });
-        if (user) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
-        user = new User_1.default({
-            name,
-            email,
-            password: yield bcryptjs_1.default.hash('default123', 10), // Default password
-            role,
-            permissions,
-            createdAt: new Date(),
-        });
-        yield user.save();
-        res.status(201).json(mapUserToResponse(user));
-    }
-    catch (error) {
-        res.status(500).json({ message: 'Server error' });
-    }
+    // Disable adding users by non-admins, but since no roles, perhaps disable entirely or allow self-registration, but register is in auth
+    return res.status(403).json({ message: 'Permission denied' });
 });
 exports.addUser = addUser;
 const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     const updates = req.body;
     try {
+        if (id !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Permission denied' });
+        }
         const user = yield User_1.default.findByIdAndUpdate(id, updates, { new: true }).select('-password');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -76,6 +59,9 @@ exports.updateUser = updateUser;
 const deleteUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     try {
+        if (id !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Permission denied' });
+        }
         const user = yield User_1.default.findByIdAndDelete(id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -88,17 +74,7 @@ const deleteUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 });
 exports.deleteUser = deleteUser;
 const updateUserPermissions = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.params;
-    const { permissions } = req.body;
-    try {
-        const user = yield User_1.default.findByIdAndUpdate(id, { permissions }, { new: true }).select('-password');
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.json(mapUserToResponse(user));
-    }
-    catch (error) {
-        res.status(500).json({ message: 'Server error' });
-    }
+    // Disable since no roles
+    return res.status(403).json({ message: 'Permission denied' });
 });
 exports.updateUserPermissions = updateUserPermissions;

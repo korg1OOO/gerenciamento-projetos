@@ -15,18 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteExpense = exports.updateExpense = exports.addExpense = exports.getExpenses = void 0;
 const Expense_1 = __importDefault(require("../models/Expense"));
 const getExpenses = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!req.user.permissions.canViewFinance) {
-        return res.status(403).json({ message: 'Permission denied' });
-    }
     try {
         const user = req.user;
-        let expenses;
-        if (user.role === 'admin') {
-            expenses = yield Expense_1.default.find().populate('createdBy', 'name email');
-        }
-        else {
-            expenses = yield Expense_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
-        }
+        const expenses = yield Expense_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
         const responseData = expenses.map((exp) => (Object.assign(Object.assign({}, exp.toJSON()), { id: exp._id.toString() })));
         res.json(responseData);
     }
@@ -56,7 +47,7 @@ const updateExpense = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (!expense) {
             return res.status(404).json({ message: 'Expense not found' });
         }
-        if (req.user.role !== 'admin' && expense.createdBy.toString() !== req.user._id.toString()) {
+        if (expense.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         const updatedExpense = yield Expense_1.default.findByIdAndUpdate(id, updates, { new: true });
@@ -75,7 +66,7 @@ const deleteExpense = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (!expense) {
             return res.status(404).json({ message: 'Expense not found' });
         }
-        if (req.user.role !== 'admin' && expense.createdBy.toString() !== req.user._id.toString()) {
+        if (expense.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         yield Expense_1.default.findByIdAndDelete(id);

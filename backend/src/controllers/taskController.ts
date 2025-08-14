@@ -14,12 +14,7 @@ type TaskDocument = BaseTaskDocument & Omit<TaskType, 'id'>;
 export const getTasks = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
-    let tasks;
-    if (user.role === 'admin') {
-      tasks = await Task.find().populate('createdBy', 'name email');
-    } else {
-      tasks = await Task.find({ createdBy: user._id }).populate('createdBy', 'name email');
-    }
+    const tasks = await Task.find({ createdBy: user._id }).populate('createdBy', 'name email');
     const responseData = tasks.map((task) => ({
       ...task.toJSON(),
       id: task._id.toString(),
@@ -54,7 +49,7 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
-    if (req.user.role !== 'admin' && task.createdBy.toString() !== req.user._id.toString()) {
+    if (task.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
     }
     const updatedTask = await Task.findByIdAndUpdate(id, updates, { new: true });
@@ -72,7 +67,7 @@ export const deleteTask = async (req: AuthRequest, res: Response) => {
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
-    if (req.user.role !== 'admin' && task.createdBy.toString() !== req.user._id.toString()) {
+    if (task.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
     }
     await Task.findByIdAndDelete(id);

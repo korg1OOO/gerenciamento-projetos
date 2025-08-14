@@ -17,13 +17,7 @@ const Client_1 = __importDefault(require("../models/Client"));
 const getClients = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.user;
-        let clients;
-        if (user.role === 'admin') {
-            clients = yield Client_1.default.find().populate('createdBy', 'name email');
-        }
-        else {
-            clients = yield Client_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
-        }
+        const clients = yield Client_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
         const responseData = clients.map((client) => (Object.assign(Object.assign({}, client.toJSON()), { id: client._id.toString() })));
         res.json(responseData);
     }
@@ -53,7 +47,7 @@ const updateClient = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (!client) {
             return res.status(404).json({ message: 'Client not found' });
         }
-        if (req.user.role !== 'admin' && client.createdBy.toString() !== req.user._id.toString()) {
+        if (client.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         const updatedClient = yield Client_1.default.findByIdAndUpdate(id, updates, { new: true });
@@ -72,7 +66,7 @@ const deleteClient = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (!client) {
             return res.status(404).json({ message: 'Client not found' });
         }
-        if (req.user.role !== 'admin' && client.createdBy.toString() !== req.user._id.toString()) {
+        if (client.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         yield Client_1.default.findByIdAndDelete(id);

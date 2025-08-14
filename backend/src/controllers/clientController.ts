@@ -14,12 +14,7 @@ type ClientDocument = BaseClientDocument & Omit<ClientType, 'id'>;
 export const getClients = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
-    let clients;
-    if (user.role === 'admin') {
-      clients = await Client.find().populate('createdBy', 'name email');
-    } else {
-      clients = await Client.find({ createdBy: user._id }).populate('createdBy', 'name email');
-    }
+    const clients = await Client.find({ createdBy: user._id }).populate('createdBy', 'name email');
     const responseData = clients.map((client) => ({
       ...client.toJSON(),
       id: client._id.toString(),
@@ -54,7 +49,7 @@ export const updateClient = async (req: AuthRequest, res: Response) => {
     if (!client) {
       return res.status(404).json({ message: 'Client not found' });
     }
-    if (req.user.role !== 'admin' && client.createdBy.toString() !== req.user._id.toString()) {
+    if (client.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
     }
     const updatedClient = await Client.findByIdAndUpdate(id, updates, { new: true });
@@ -72,7 +67,7 @@ export const deleteClient = async (req: AuthRequest, res: Response) => {
     if (!client) {
       return res.status(404).json({ message: 'Client not found' });
     }
-    if (req.user.role !== 'admin' && client.createdBy.toString() !== req.user._id.toString()) {
+    if (client.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
     }
     await Client.findByIdAndDelete(id);

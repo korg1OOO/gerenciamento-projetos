@@ -17,13 +17,7 @@ const ExpenseCategory_1 = __importDefault(require("../models/ExpenseCategory"));
 const getExpenseCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.user;
-        let categories;
-        if (user.role === 'admin') {
-            categories = yield ExpenseCategory_1.default.find().populate('createdBy', 'name email');
-        }
-        else {
-            categories = yield ExpenseCategory_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
-        }
+        const categories = yield ExpenseCategory_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
         res.json(categories);
     }
     catch (error) {
@@ -32,10 +26,6 @@ const getExpenseCategories = (req, res) => __awaiter(void 0, void 0, void 0, fun
 });
 exports.getExpenseCategories = getExpenseCategories;
 const addExpenseCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    // Optional: restrict to admins
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Permission denied' });
-    }
     const categoryData = req.body;
     try {
         const category = new ExpenseCategory_1.default(Object.assign(Object.assign({}, categoryData), { createdBy: req.user._id }));
@@ -51,12 +41,11 @@ const updateExpenseCategory = (req, res) => __awaiter(void 0, void 0, void 0, fu
     const { id } = req.params;
     const updates = req.body;
     try {
-        // Optional: restrict to admins or creator
         const category = yield ExpenseCategory_1.default.findById(id);
         if (!category) {
             return res.status(404).json({ message: 'Category not found' });
         }
-        if (req.user.role !== 'admin' && category.createdBy.toString() !== req.user._id.toString()) {
+        if (category.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         const updatedCategory = yield ExpenseCategory_1.default.findByIdAndUpdate(id, updates, { new: true });
@@ -70,12 +59,11 @@ exports.updateExpenseCategory = updateExpenseCategory;
 const deleteExpenseCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     try {
-        // Optional: restrict to admins or creator
         const category = yield ExpenseCategory_1.default.findById(id);
         if (!category) {
             return res.status(404).json({ message: 'Category not found' });
         }
-        if (req.user.role !== 'admin' && category.createdBy.toString() !== req.user._id.toString()) {
+        if (category.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         yield ExpenseCategory_1.default.findByIdAndDelete(id);

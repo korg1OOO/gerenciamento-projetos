@@ -24,11 +24,3 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     res.status(401).json({ message: 'Unauthorized' });
   }
 };
-
-export const adminMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (req.user && req.user.role === 'admin') {
-    next();
-  } else {
-    res.status(403).json({ message: 'Admin access required' });
-  }
-};

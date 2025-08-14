@@ -16,12 +16,7 @@ type OperationDocument = BaseOperationDocument & Omit<OperationType, 'id'>;
 export const getOperations = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
-    let operations;
-    if (user.role === 'admin') {
-      operations = await Operation.find().populate('createdBy', 'name email');
-    } else {
-      operations = await Operation.find({ createdBy: user._id }).populate('createdBy', 'name email');
-    }
+    const operations = await Operation.find({ createdBy: user._id }).populate('createdBy', 'name email');
     const responseData = operations.map((op) => ({
       ...op.toJSON(),
       id: op._id.toString(),
@@ -33,10 +28,6 @@ export const getOperations = async (req: AuthRequest, res: Response) => {
 };
 
 export const addOperation = async (req: AuthRequest, res: Response) => {
-  if (!req.user.permissions.canEditOperations) {
-    return res.status(403).json({ message: 'Permission denied' });
-  }
-
   const operationData = req.body;
   try {
     const operation = new Operation({
@@ -53,10 +44,6 @@ export const addOperation = async (req: AuthRequest, res: Response) => {
 };
 
 export const updateOperation = async (req: AuthRequest, res: Response) => {
-  if (!req.user.permissions.canEditOperations) {
-    return res.status(403).json({ message: 'Permission denied' });
-  }
-
   const { id } = req.params;
   const updates = req.body;
   try {
@@ -64,7 +51,7 @@ export const updateOperation = async (req: AuthRequest, res: Response) => {
     if (!operation) {
       return res.status(404).json({ message: 'Operation not found' });
     }
-    if (req.user.role !== 'admin' && operation.createdBy.toString() !== req.user._id.toString()) {
+    if (operation.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
     }
     const updatedOperation = await Operation.findByIdAndUpdate(id, updates, { new: true });
@@ -76,17 +63,13 @@ export const updateOperation = async (req: AuthRequest, res: Response) => {
 };
 
 export const deleteOperation = async (req: AuthRequest, res: Response) => {
-  if (!req.user.permissions.canEditOperations) {
-    return res.status(403).json({ message: 'Permission denied' });
-  }
-
   const { id } = req.params;
   try {
     const operation = await Operation.findById(id) as OperationDocument | null;
     if (!operation) {
       return res.status(404).json({ message: 'Operation not found' });
     }
-    if (req.user.role !== 'admin' && operation.createdBy.toString() !== req.user._id.toString()) {
+    if (operation.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
     }
     await Operation.findByIdAndDelete(id);
