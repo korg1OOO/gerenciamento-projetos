@@ -1,12 +1,16 @@
-// controllers/expenseCategoryController.ts
 import { Request, Response } from 'express';
 import ExpenseCategory from '../models/ExpenseCategory';
 import { AuthRequest } from '../middleware/authMiddleware';
 
 export const getExpenseCategories = async (req: AuthRequest, res: Response) => {
   try {
-    // Universal: return all categories (no permission filter, as they're configs)
-    const categories = await ExpenseCategory.find().populate('createdBy', 'name email');
+    const user = req.user;
+    let categories;
+    if (user.role === 'admin') {
+      categories = await ExpenseCategory.find().populate('createdBy', 'name email');
+    } else {
+      categories = await ExpenseCategory.find({ createdBy: user._id }).populate('createdBy', 'name email');
+    }
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: (error as Error).message });

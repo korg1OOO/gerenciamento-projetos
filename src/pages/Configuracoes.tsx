@@ -287,7 +287,7 @@ export default function Configuracoes() {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-medium mb-2">Categorias Padrão (Não Removíveis)</h3>
+              <h3 className="text-sm font-medium mb-2">Categorias Padrão</h3>
               <div className="flex flex-wrap gap-2">
                 {hardcodedCategories.map((category) => (
                   <Badge key={category.id} variant="secondary" className="flex items-center gap-2">
@@ -361,7 +361,7 @@ export default function Configuracoes() {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-medium mb-2">Tipos Padrão (Não Removíveis)</h3>
+              <h3 className="text-sm font-medium mb-2">Tipos Padrão</h3>
               <div className="flex flex-wrap gap-2">
                 {hardcodedOperationTypes.map((type) => (
                   <Badge key={type.id} variant="secondary" className="flex items-center gap-2">

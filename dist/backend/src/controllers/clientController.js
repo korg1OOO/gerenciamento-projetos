@@ -14,28 +14,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteClient = exports.updateClient = exports.addClient = exports.getClients = void 0;
 const Client_1 = __importDefault(require("../models/Client"));
-const Operation_1 = __importDefault(require("../models/Operation"));
 const getClients = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.user;
         let clients;
-        if (user.permissions.canAccessAllProjects) {
+        if (user.role === 'admin') {
             clients = yield Client_1.default.find().populate('createdBy', 'name email');
         }
         else {
-            const accessibleOperations = yield Operation_1.default.find({
-                $or: [
-                    { _id: { $in: user.permissions.assignedOperations } },
-                    { createdBy: user._id },
-                ],
-            }).select('_id');
-            const accessibleOpIds = accessibleOperations.map((op) => op._id.toString());
-            clients = yield Client_1.default.find({
-                $or: [
-                    { operationId: { $in: accessibleOpIds } },
-                    { createdBy: user._id },
-                ],
-            }).populate('createdBy', 'name email');
+            clients = yield Client_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
         }
         const responseData = clients.map((client) => (Object.assign(Object.assign({}, client.toJSON()), { id: client._id.toString() })));
         res.json(responseData);

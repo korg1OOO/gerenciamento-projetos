@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import Expense from '../models/Expense';
-import Operation from '../models/Operation';
 import { Expense as ExpenseType } from '../types';
 import { AuthRequest } from '../middleware/authMiddleware';
 import mongoose from 'mongoose';
@@ -20,22 +19,10 @@ export const getExpenses = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
     let expenses;
-    if (user.permissions.canAccessAllProjects) {
+    if (user.role === 'admin') {
       expenses = await Expense.find().populate('createdBy', 'name email');
     } else {
-      const accessibleOperations = await Operation.find({
-        $or: [
-          { _id: { $in: user.permissions.assignedOperations } },
-          { createdBy: user._id },
-        ],
-      }).select('_id');
-      const accessibleOpIds = accessibleOperations.map((op) => op._id.toString());
-      expenses = await Expense.find({
-        $or: [
-          { operationId: { $in: accessibleOpIds } },
-          { createdBy: user._id },
-        ],
-      }).populate('createdBy', 'name email');
+      expenses = await Expense.find({ createdBy: user._id }).populate('createdBy', 'name email');
     }
     const responseData = expenses.map((exp) => ({
       ...exp.toJSON(),

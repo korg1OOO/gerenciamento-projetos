@@ -16,8 +16,14 @@ exports.deleteOperationType = exports.updateOperationType = exports.addOperation
 const OperationType_1 = __importDefault(require("../models/OperationType"));
 const getOperationTypes = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // Universal: return all types
-        const types = yield OperationType_1.default.find().populate('createdBy', 'name email');
+        const user = req.user;
+        let types;
+        if (user.role === 'admin') {
+            types = yield OperationType_1.default.find().populate('createdBy', 'name email');
+        }
+        else {
+            types = yield OperationType_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
+        }
         res.json(types);
     }
     catch (error) {

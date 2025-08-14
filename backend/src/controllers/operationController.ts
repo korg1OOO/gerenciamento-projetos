@@ -17,15 +17,10 @@ export const getOperations = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
     let operations;
-    if (user.permissions.canAccessAllProjects) {
+    if (user.role === 'admin') {
       operations = await Operation.find().populate('createdBy', 'name email');
     } else {
-      operations = await Operation.find({
-        $or: [
-          { _id: { $in: user.permissions.assignedOperations } },
-          { createdBy: user._id },
-        ],
-      }).populate('createdBy', 'name email');
+      operations = await Operation.find({ createdBy: user._id }).populate('createdBy', 'name email');
     }
     const responseData = operations.map((op) => ({
       ...op.toJSON(),
@@ -69,11 +64,7 @@ export const updateOperation = async (req: AuthRequest, res: Response) => {
     if (!operation) {
       return res.status(404).json({ message: 'Operation not found' });
     }
-    if (
-      !req.user.permissions.canAccessAllProjects &&
-      operation.createdBy.toString() !== req.user._id.toString() &&
-      !req.user.permissions.assignedOperations.includes(id)
-    ) {
+    if (req.user.role !== 'admin' && operation.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
     }
     const updatedOperation = await Operation.findByIdAndUpdate(id, updates, { new: true });
@@ -95,7 +86,7 @@ export const deleteOperation = async (req: AuthRequest, res: Response) => {
     if (!operation) {
       return res.status(404).json({ message: 'Operation not found' });
     }
-    if (!req.user.permissions.canAccessAllProjects && operation.createdBy.toString() !== req.user._id.toString()) {
+    if (req.user.role !== 'admin' && operation.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
     }
     await Operation.findByIdAndDelete(id);

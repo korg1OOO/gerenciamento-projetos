@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import Client from '../models/Client';
-import Operation from '../models/Operation';
 import { Client as ClientType } from '../types';
 import { AuthRequest } from '../middleware/authMiddleware';
 import mongoose from 'mongoose';
@@ -16,22 +15,10 @@ export const getClients = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
     let clients;
-    if (user.permissions.canAccessAllProjects) {
+    if (user.role === 'admin') {
       clients = await Client.find().populate('createdBy', 'name email');
     } else {
-      const accessibleOperations = await Operation.find({
-        $or: [
-          { _id: { $in: user.permissions.assignedOperations } },
-          { createdBy: user._id },
-        ],
-      }).select('_id');
-      const accessibleOpIds = accessibleOperations.map((op) => op._id.toString());
-      clients = await Client.find({
-        $or: [
-          { operationId: { $in: accessibleOpIds } },
-          { createdBy: user._id },
-        ],
-      }).populate('createdBy', 'name email');
+      clients = await Client.find({ createdBy: user._id }).populate('createdBy', 'name email');
     }
     const responseData = clients.map((client) => ({
       ...client.toJSON(),

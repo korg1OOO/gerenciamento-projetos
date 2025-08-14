@@ -16,8 +16,14 @@ exports.deleteExpenseCategory = exports.updateExpenseCategory = exports.addExpen
 const ExpenseCategory_1 = __importDefault(require("../models/ExpenseCategory"));
 const getExpenseCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // Universal: return all categories (no permission filter, as they're configs)
-        const categories = yield ExpenseCategory_1.default.find().populate('createdBy', 'name email');
+        const user = req.user;
+        let categories;
+        if (user.role === 'admin') {
+            categories = yield ExpenseCategory_1.default.find().populate('createdBy', 'name email');
+        }
+        else {
+            categories = yield ExpenseCategory_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
+        }
         res.json(categories);
     }
     catch (error) {

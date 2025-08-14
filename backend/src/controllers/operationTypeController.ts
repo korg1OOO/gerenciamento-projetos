@@ -1,12 +1,16 @@
-// controllers/operationTypeController.ts
 import { Request, Response } from 'express';
 import OperationType from '../models/OperationType';
 import { AuthRequest } from '../middleware/authMiddleware';
 
 export const getOperationTypes = async (req: AuthRequest, res: Response) => {
   try {
-    // Universal: return all types
-    const types = await OperationType.find().populate('createdBy', 'name email');
+    const user = req.user;
+    let types;
+    if (user.role === 'admin') {
+      types = await OperationType.find().populate('createdBy', 'name email');
+    } else {
+      types = await OperationType.find({ createdBy: user._id }).populate('createdBy', 'name email');
+    }
     res.json(types);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: (error as Error).message });

@@ -18,16 +18,11 @@ const getOperations = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     try {
         const user = req.user;
         let operations;
-        if (user.permissions.canAccessAllProjects) {
+        if (user.role === 'admin') {
             operations = yield Operation_1.default.find().populate('createdBy', 'name email');
         }
         else {
-            operations = yield Operation_1.default.find({
-                $or: [
-                    { _id: { $in: user.permissions.assignedOperations } },
-                    { createdBy: user._id },
-                ],
-            }).populate('createdBy', 'name email');
+            operations = yield Operation_1.default.find({ createdBy: user._id }).populate('createdBy', 'name email');
         }
         const responseData = operations.map((op) => (Object.assign(Object.assign({}, op.toJSON()), { id: op._id.toString() })));
         res.json(responseData);
@@ -64,9 +59,7 @@ const updateOperation = (req, res) => __awaiter(void 0, void 0, void 0, function
         if (!operation) {
             return res.status(404).json({ message: 'Operation not found' });
         }
-        if (!req.user.permissions.canAccessAllProjects &&
-            operation.createdBy.toString() !== req.user._id.toString() &&
-            !req.user.permissions.assignedOperations.includes(id)) {
+        if (req.user.role !== 'admin' && operation.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         const updatedOperation = yield Operation_1.default.findByIdAndUpdate(id, updates, { new: true });
@@ -88,7 +81,7 @@ const deleteOperation = (req, res) => __awaiter(void 0, void 0, void 0, function
         if (!operation) {
             return res.status(404).json({ message: 'Operation not found' });
         }
-        if (!req.user.permissions.canAccessAllProjects && operation.createdBy.toString() !== req.user._id.toString()) {
+        if (req.user.role !== 'admin' && operation.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
         yield Operation_1.default.findByIdAndDelete(id);

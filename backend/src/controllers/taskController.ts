@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import Task from '../models/Task';
-import Operation from '../models/Operation';
 import { Task as TaskType } from '../types';
 import { AuthRequest } from '../middleware/authMiddleware';
 import mongoose from 'mongoose';
@@ -16,22 +15,10 @@ export const getTasks = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
     let tasks;
-    if (user.permissions.canAccessAllProjects) {
+    if (user.role === 'admin') {
       tasks = await Task.find().populate('createdBy', 'name email');
     } else {
-      const accessibleOperations = await Operation.find({
-        $or: [
-          { _id: { $in: user.permissions.assignedOperations } },
-          { createdBy: user._id },
-        ],
-      }).select('_id');
-      const accessibleOpIds = accessibleOperations.map((op) => op._id.toString());
-      tasks = await Task.find({
-        $or: [
-          { operationId: { $in: accessibleOpIds } },
-          { createdBy: user._id },
-        ],
-      }).populate('createdBy', 'name email');
+      tasks = await Task.find({ createdBy: user._id }).populate('createdBy', 'name email');
     }
     const responseData = tasks.map((task) => ({
       ...task.toJSON(),
