@@ -10,20 +10,19 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Shield, Palette, Database, Plus, Trash2, Users, DollarSign } from "lucide-react";
 
-// Mock de configurações (em um app real viria de um backend)
-const defaultCategories = [
-  { id: '1', name: 'Infraestrutura', type: 'expense' },
-  { id: '2', name: 'Equipe', type: 'expense' },
-  { id: '3', name: 'Ferramentas', type: 'expense' },
-  { id: '4', name: 'Marketing', type: 'expense' },
-  { id: '5', name: 'Jurídico', type: 'expense' }
+const hardcodedCategories = [
+  { id: 'default-infra', name: 'Infraestrutura', type: 'expense' },
+  { id: 'default-equipe', name: 'Equipe', type: 'expense' },
+  { id: 'default-ferramentas', name: 'Ferramentas', type: 'expense' },
+  { id: 'default-marketing', name: 'Marketing', type: 'expense' },
+  { id: 'default-juridico', name: 'Jurídico', type: 'expense' }
 ];
 
-const defaultOperationTypes = [
-  { id: '1', name: 'SaaS' },
-  { id: '2', name: 'Produto' },
-  { id: '3', name: 'Loja' },
-  { id: '4', name: 'Serviço' }
+const hardcodedOperationTypes = [
+  { id: 'default-saas', name: 'SaaS' },
+  { id: 'default-produto', name: 'Produto' },
+  { id: 'default-loja', name: 'Loja' },
+  { id: 'default-servico', name: 'Serviço' }
 ];
 
 export default function Configuracoes() {
@@ -286,20 +285,35 @@ export default function Configuracoes() {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {expenseCategories.map((category) => (
-              <Badge key={category.id} variant="outline" className="flex items-center gap-2">
-                {category.name}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeCategory(category.id)}
-                  className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </Badge>
-            ))}
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium mb-2">Categorias Padrão (Não Removíveis)</h3>
+              <div className="flex flex-wrap gap-2">
+                {hardcodedCategories.map((category) => (
+                  <Badge key={category.id} variant="secondary" className="flex items-center gap-2">
+                    {category.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium mb-2">Categorias Personalizadas</h3>
+              <div className="flex flex-wrap gap-2">
+                {expenseCategories.map((category) => (
+                  <Badge key={category.id} variant="outline" className="flex items-center gap-2">
+                    {category.name}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeCategory(category.id)}
+                      className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -345,20 +359,35 @@ export default function Configuracoes() {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {operationTypes.map((type) => (
-              <Badge key={type.id} variant="outline" className="flex items-center gap-2">
-                {type.name}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeOperationType(type.id)}
-                  className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </Badge>
-            ))}
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium mb-2">Tipos Padrão (Não Removíveis)</h3>
+              <div className="flex flex-wrap gap-2">
+                {hardcodedOperationTypes.map((type) => (
+                  <Badge key={type.id} variant="secondary" className="flex items-center gap-2">
+                    {type.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium mb-2">Tipos Personalizados</h3>
+              <div className="flex flex-wrap gap-2">
+                {operationTypes.map((type) => (
+                  <Badge key={type.id} variant="outline" className="flex items-center gap-2">
+                    {type.name}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeOperationType(type.id)}
+                      className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
