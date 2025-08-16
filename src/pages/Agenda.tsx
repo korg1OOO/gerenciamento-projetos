@@ -26,6 +26,8 @@ import {
   LayoutDashboard,
   CalendarDays,
 } from "lucide-react";
+import { toZonedTime, formatInTimeZone } from "date-fns-tz";
+import { timezone } from "@/utils/timezone"; // 'America/Sao_Paulo'
 
 const PRIORITY_LABELS = {
   baixa: "Baixa",
@@ -56,7 +58,7 @@ export default function Agenda() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    date: new Date().toISOString().split("T")[0], // Current date: 2025-08-16
+    date: formatInTimeZone(toZonedTime(new Date(), timezone), timezone, "yyyy-MM-dd"), // Current date in UTC-3
     time: "",
     operationId: "none",
     priority: "media" as "baixa" | "media" | "alta",
@@ -71,7 +73,7 @@ export default function Agenda() {
     setFormData({
       title: "",
       description: "",
-      date: new Date().toISOString().split("T")[0], // Reset to current date
+      date: formatInTimeZone(toZonedTime(new Date(), timezone), timezone, "yyyy-MM-dd"), // Reset to current date
       time: "",
       operationId: "none",
       priority: "media",
@@ -80,7 +82,6 @@ export default function Agenda() {
   };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData.title.trim()) {
       toast({
         title: "Erro",
@@ -119,7 +120,7 @@ export default function Agenda() {
     setFormData({
       title: task.title,
       description: task.description,
-      date: new Date(task.date).toISOString().split("T")[0],
+      date: formatInTimeZone(toZonedTime(new Date(task.date), timezone), timezone, "yyyy-MM-dd"),
       time: task.time || "",
       operationId: task.operationId || "none",
       priority: task.priority,
@@ -147,14 +148,13 @@ export default function Agenda() {
   // Filtrar tarefas baseado nos filtros ativos
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
+      const taskDate = toZonedTime(new Date(task.date), timezone);
+      const today = toZonedTime(new Date(), timezone);
       // Filtro por status
       if (filters.status === "pending" && task.completed) return false;
       if (filters.status === "completed" && !task.completed) return false;
       if (filters.status === "overdue") {
-        const isOverdue =
-          new Date(task.date) < new Date() &&
-          new Date(task.date).toDateString() !== new Date().toDateString() &&
-          !task.completed;
+        const isOverdue = taskDate < today && taskDate.toDateString() !== today.toDateString() && !task.completed;
         if (!isOverdue) return false;
       }
       // Filtro por prioridade
@@ -168,35 +168,25 @@ export default function Agenda() {
   const groupedTasks = useMemo(() => {
     const groups: Record<string, Task[]> = {};
     const sortedTasks = [...filteredTasks].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => toZonedTime(new Date(a.date), timezone).getTime() - toZonedTime(new Date(b.date), timezone).getTime()
     );
-
     sortedTasks.forEach((task) => {
-      // Format date to dd/MM/yyyy in UTC-3 (America/Sao_Paulo)
-      const taskDate = new Date(task.date);
-      const formatter = new Intl.DateTimeFormat("pt-BR", {
-        timeZone: "America/Sao_Paulo",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-      const dateKey = formatter.format(taskDate); // e.g., "16/08/2025"
+      const taskDate = toZonedTime(new Date(task.date), timezone);
+      const dateKey = formatInTimeZone(taskDate, timezone, "dd/MM/yyyy"); // e.g., "09/08/2025"
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
       groups[dateKey].push(task);
     });
-
     return groups;
   }, [filteredTasks]);
   const pendingTasks = tasks.filter((task) => !task.completed);
   const completedTasks = tasks.filter((task) => task.completed);
   const highPriorityTasks = pendingTasks.filter((task) => task.priority === "alta");
   const overdueTasks = tasks.filter((task) => {
-    const isOverdue =
-      new Date(task.date) < new Date() &&
-      new Date(task.date).toDateString() !== new Date().toDateString() &&
-      !task.completed;
+    const taskDate = toZonedTime(new Date(task.date), timezone);
+    const today = toZonedTime(new Date(), timezone);
+    const isOverdue = taskDate < today && taskDate.toDateString() !== today.toDateString() && !task.completed;
     return isOverdue;
   });
   // Função para aplicar filtros através dos cards
@@ -215,38 +205,25 @@ export default function Agenda() {
     }));
   };
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const formatter = new Intl.DateTimeFormat("pt-BR", {
-      timeZone: "America/Sao_Paulo",
-      weekday: "long",
-      day: "numeric",
-      month: "long",
+    const date = toZonedTime(new Date(dateString), timezone);
+    const today = toZonedTime(new Date(), timezone);
+    const tomorrow = toZonedTime(new Date(), timezone);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const formattedDate = formatInTimeZone(date, timezone, "EEEE, d 'de' MMMM", {
+      locale: ptBR,
     });
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    const formattedDate = formatter.format(date);
-
-    if (
-      date.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) ===
-      today.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
-    ) {
+    if (isSameDay(date, today)) {
       return "Hoje";
-    } else if (
-      date.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) ===
-      tomorrow.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
-    ) {
+    } else if (isSameDay(date, tomorrow)) {
       return "Amanhã";
     } else {
       return formattedDate;
     }
   };
   const isOverdue = (dateString: string) => {
-    const taskDate = new Date(dateString);
-    const today = new Date();
-    return (
-      taskDate < today && taskDate.toDateString() !== today.toDateString()
-    );
+    const taskDate = toZonedTime(new Date(dateString), timezone);
+    const today = toZonedTime(new Date(), timezone);
+    return taskDate < today && taskDate.toDateString() !== today.toDateString();
   };
   return (
     <div className="space-y-6">
