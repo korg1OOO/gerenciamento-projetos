@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+// Task router (taskRoutes.ts)
 const express_1 = require("express");
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const taskController_1 = require("../controllers/taskController");

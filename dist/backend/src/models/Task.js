@@ -33,6 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+// Task model (Task.ts)
 const mongoose_1 = __importStar(require("mongoose"));
 const taskSchema = new mongoose_1.Schema({
     title: { type: String, required: true },

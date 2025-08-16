@@ -29,7 +29,7 @@ import {
 
 const PRIORITY_LABELS = {
   baixa: "Baixa",
-  media: "Média", 
+  media: "Média",
   alta: "Alta"
 };
 
@@ -46,31 +46,27 @@ export default function Agenda() {
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "kanban" | "calendar">("list");
-
   // Filtros de estado
   const [filters, setFilters] = useState({
     status: "all" as "all" | "pending" | "completed" | "overdue",
     priority: "all" as "all" | "baixa" | "media" | "alta",
     operationId: "all" as string
   });
-
   // Formulário para nova tarefa
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     date: new Date().toISOString().split('T')[0],
     time: "",
-    operationId: "",
+    operationId: "none",
     priority: "media" as "baixa" | "media" | "alta"
   });
-
   // Abrir modal automaticamente se veio da URL
   useEffect(() => {
     if (searchParams.get('action') === 'new') {
       setIsNewModalOpen(true);
     }
   }, [searchParams]);
-
   const resetForm = () => {
     setFormData({
       title: "",
@@ -82,10 +78,9 @@ export default function Agenda() {
     });
     setEditingTask(null);
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+   
     if (!formData.title.trim()) {
       toast({
         title: "Erro",
@@ -94,17 +89,15 @@ export default function Agenda() {
       });
       return;
     }
-
     const taskData = {
       title: formData.title,
       description: formData.description,
-      date: new Date(formData.date),
+      date: formData.date, // Send as YYYY-MM-DD string
       time: formData.time || undefined,
       operationId: formData.operationId === "none" ? undefined : formData.operationId,
       priority: formData.priority,
       completed: false
     };
-
     if (editingTask) {
       updateTask(editingTask.id, taskData);
       toast({
@@ -118,11 +111,9 @@ export default function Agenda() {
         description: "Nova tarefa criada com sucesso!"
       });
     }
-
     setIsNewModalOpen(false);
     resetForm();
   };
-
   const handleEdit = (task: Task) => {
     setEditingTask(task);
     setFormData({
@@ -135,7 +126,6 @@ export default function Agenda() {
     });
     setIsNewModalOpen(true);
   };
-
   const handleDelete = (id: string) => {
     if (confirm("Tem certeza que deseja excluir esta tarefa?")) {
       deleteTask(id);
@@ -145,7 +135,6 @@ export default function Agenda() {
       });
     }
   };
-
   const handleToggleComplete = (task: Task) => {
     updateTask(task.id, { completed: !task.completed });
     toast({
@@ -153,7 +142,6 @@ export default function Agenda() {
       description: task.completed ? "Tarefa marcada como pendente" : "Parabéns! Tarefa finalizada"
     });
   };
-
   // Filtrar tarefas baseado nos filtros ativos
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -161,81 +149,80 @@ export default function Agenda() {
       if (filters.status === "pending" && task.completed) return false;
       if (filters.status === "completed" && !task.completed) return false;
       if (filters.status === "overdue") {
-        const isOverdue = new Date(task.date) < new Date() && 
-                         new Date(task.date).toDateString() !== new Date().toDateString() && 
+        const isOverdue = new Date(task.date) < new Date() &&
+                         new Date(task.date).toDateString() !== new Date().toDateString() &&
                          !task.completed;
         if (!isOverdue) return false;
       }
-
       // Filtro por prioridade
       if (filters.priority !== "all" && task.priority !== filters.priority) return false;
-
       // Filtro por operação
       if (filters.operationId !== "all" && task.operationId !== filters.operationId) return false;
-
       return true;
     });
   }, [tasks, filters]);
-
   // Agrupar tarefas filtradas por data
   const groupedTasks = useMemo(() => {
     const groups: Record<string, Task[]> = {};
-    const sortedTasks = [...filteredTasks].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    sortedTasks.forEach(task => {
-      const dateKey = new Date(task.date).toISOString().split('T')[0];
-      if (!groups[dateKey]) {
-        groups[dateKey] = [];
+    const sortedTasks = [...filteredTasks].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    sortedTasks.forEach((task) => {
+      // Convert to local date string directly
+      const taskDate = new Date(task.date);
+      const localDate = taskDate.toLocaleDateString('en-CA'); // 'en-CA' gives YYYY-MM-DD
+      if (!groups[localDate]) {
+        groups[localDate] = [];
       }
-      groups[dateKey].push(task);
+      groups[localDate].push(task);
     });
-    
+
     return groups;
   }, [filteredTasks]);
-
   const pendingTasks = tasks.filter(task => !task.completed);
   const completedTasks = tasks.filter(task => task.completed);
   const highPriorityTasks = pendingTasks.filter(task => task.priority === 'alta');
   const overdueTasks = tasks.filter(task => {
-    const isOverdue = new Date(task.date) < new Date() && 
-                     new Date(task.date).toDateString() !== new Date().toDateString() && 
+    const isOverdue = new Date(task.date) < new Date() &&
+                     new Date(task.date).toDateString() !== new Date().toDateString() &&
                      !task.completed;
     return isOverdue;
   });
-
   // Função para aplicar filtros através dos cards
   const handleCardFilter = (filterType: "pending" | "completed" | "high-priority" | "total") => {
     setFilters(prev => ({
       ...prev,
-      status: filterType === "pending" ? "pending" : 
+      status: filterType === "pending" ? "pending" :
              filterType === "completed" ? "completed" : "all",
       priority: filterType === "high-priority" ? "alta" : "all"
     }));
   };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+    const adjustedDate = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
-    
-    if (date.toDateString() === today.toDateString()) {
+
+    if (adjustedDate.toDateString() === today.toDateString()) {
       return "Hoje";
-    } else if (date.toDateString() === tomorrow.toDateString()) {
+    } else if (adjustedDate.toDateString() === tomorrow.toDateString()) {
       return "Amanhã";
     } else {
-      return date.toLocaleDateString('pt-BR', { 
-        weekday: 'long', 
-        day: 'numeric', 
-        month: 'long' 
+      return adjustedDate.toLocaleDateString('pt-BR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
       });
     }
   };
-
   const isOverdue = (dateString: string) => {
-    return new Date(dateString) < new Date() && new Date(dateString).toDateString() !== new Date().toDateString();
+    const taskDate = new Date(dateString);
+    const adjustedDate = new Date(taskDate.getTime() - taskDate.getTimezoneOffset() * 60 * 1000);
+    const today = new Date();
+    return adjustedDate < today && adjustedDate.toDateString() !== today.toDateString();
   };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -276,110 +263,104 @@ export default function Agenda() {
                   {editingTask ? "Editar Tarefa" : "Nova Tarefa"}
                 </DialogTitle>
               </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="title">Título *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Digite o título da tarefa..."
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="date">Data *</Label>
+                  <Label htmlFor="title">Título *</Label>
                   <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Digite o título da tarefa..."
                     required
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="date">Data *</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="time">Horário</Label>
+                    <Input
+                      id="time"
+                      type="text"
+                      placeholder="Ex: 14:30-16:00"
+                      value={formData.time}
+                      onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                    />
+                  </div>
+                </div>
                 <div>
-                  <Label htmlFor="time">Horário</Label>
-                  <Input
-                    id="time"
-                    type="text"
-                    placeholder="Ex: 14:30-16:00"
-                    value={formData.time}
-                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  <Label htmlFor="priority">Prioridade</Label>
+                  <Select
+                    value={formData.priority}
+                    onValueChange={(value) => setFormData({ ...formData, priority: value as any })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(PRIORITY_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="operation">Operação Relacionada</Label>
+                  <Select
+                    value={formData.operationId}
+                    onValueChange={(value) => setFormData({ ...formData, operationId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma operação..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhuma</SelectItem>
+                      {operations.map((operation) => (
+                        <SelectItem key={operation.id} value={operation.id}>
+                          {operation.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="description">Descrição</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Descreva os detalhes da tarefa..."
+                    rows={3}
                   />
                 </div>
-              </div>
-
-              <div>
-                <Label htmlFor="priority">Prioridade</Label>
-                <Select
-                  value={formData.priority}
-                  onValueChange={(value) => setFormData({ ...formData, priority: value as any })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(PRIORITY_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="operation">Operação Relacionada</Label>
-                <Select
-                  value={formData.operationId}
-                  onValueChange={(value) => setFormData({ ...formData, operationId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma operação..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nenhuma</SelectItem>
-                    {operations.map((operation) => (
-                      <SelectItem key={operation.id} value={operation.id}>
-                        {operation.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Descreva os detalhes da tarefa..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button type="submit" className="bg-primary hover:bg-primary/90">
-                  {editingTask ? "Atualizar" : "Criar"} Tarefa
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsNewModalOpen(false);
-                    resetForm();
-                  }}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+                <div className="flex gap-3 pt-4">
+                  <Button type="submit" className="bg-primary hover:bg-primary/90">
+                    {editingTask ? "Atualizar" : "Criar"} Tarefa
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsNewModalOpen(false);
+                      resetForm();
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </form>
             </DialogContent>
           </Dialog>
         </div>
       </div>
-
       {/* Filtros */}
       <Card className="border-border bg-card shadow-subtle">
         <CardContent className="p-4">
@@ -440,11 +421,10 @@ export default function Agenda() {
           </div>
         </CardContent>
       </Card>
-
       {/* Cards de estatísticas clicáveis */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-        <Card 
-          className="border-border bg-card shadow-subtle cursor-pointer hover:shadow-card transition-shadow" 
+        <Card
+          className="border-border bg-card shadow-subtle cursor-pointer hover:shadow-card transition-shadow"
           onClick={() => handleCardFilter("pending")}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -459,8 +439,7 @@ export default function Agenda() {
             </div>
           </CardContent>
         </Card>
-
-        <Card 
+        <Card
           className="border-border bg-card shadow-subtle cursor-pointer hover:shadow-card transition-shadow"
           onClick={() => handleCardFilter("completed")}
         >
@@ -476,8 +455,7 @@ export default function Agenda() {
             </div>
           </CardContent>
         </Card>
-
-        <Card 
+        <Card
           className="border-border bg-card shadow-subtle cursor-pointer hover:shadow-card transition-shadow"
           onClick={() => handleCardFilter("high-priority")}
         >
@@ -493,8 +471,7 @@ export default function Agenda() {
             </div>
           </CardContent>
         </Card>
-
-        <Card 
+        <Card
           className="border-border bg-card shadow-subtle cursor-pointer hover:shadow-card transition-shadow"
           onClick={() => handleCardFilter("total")}
         >
@@ -511,7 +488,6 @@ export default function Agenda() {
           </CardContent>
         </Card>
       </div>
-
       {/* Conteúdo baseado na visualização selecionada */}
       <div className="w-full overflow-hidden">
       {viewMode === "list" ? (
@@ -538,11 +514,11 @@ export default function Agenda() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {dayTasks.map((task) => (
-                  <div 
-                    key={task.id} 
+                  <div
+                    key={task.id}
                     className={`flex items-start gap-3 p-3 sm:p-4 rounded-lg border transition-fast shadow-subtle ${
-                      task.completed 
-                        ? 'bg-muted/50 border-muted opacity-75' 
+                      task.completed
+                        ? 'bg-muted/50 border-muted opacity-75'
                         : 'bg-card border-border hover:border-primary/50 hover:shadow-card'
                     }`}
                   >
@@ -551,7 +527,7 @@ export default function Agenda() {
                       onCheckedChange={() => handleToggleComplete(task)}
                       className="mt-1"
                     />
-                    
+                   
                     <div className="flex-1 space-y-2">
                       <div className="flex items-start justify-between">
                         <h4 className={`font-medium ${
@@ -568,7 +544,6 @@ export default function Agenda() {
                           )}
                         </div>
                       </div>
-
                       {task.description && (
                         <p className={`text-sm ${
                           task.completed ? 'text-muted-foreground' : 'text-muted-foreground'
@@ -576,7 +551,6 @@ export default function Agenda() {
                           {task.description}
                         </p>
                       )}
-
                       <div className="flex items-center gap-2 flex-wrap">
                         {task.time && (
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -591,7 +565,6 @@ export default function Agenda() {
                         )}
                       </div>
                     </div>
-
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"
@@ -625,7 +598,7 @@ export default function Agenda() {
               <p className="text-sm sm:text-base text-muted-foreground mb-4">
                 Comece criando sua primeira tarefa para organizar seu trabalho.
               </p>
-              <Button 
+              <Button
                 onClick={() => setIsNewModalOpen(true)}
                 className="bg-primary hover:bg-primary/90 shadow-sm"
               >
@@ -648,7 +621,6 @@ export default function Agenda() {
         </div>
       )}
       </div>
-
       {/* Botão floating para mobile */}
       <div className="fixed bottom-6 right-6 md:hidden z-50">
         <Button

@@ -1,3 +1,4 @@
+// Task router (taskRoutes.ts)
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { getTasks, addTask, updateTask, deleteTask } from '../controllers/taskController';

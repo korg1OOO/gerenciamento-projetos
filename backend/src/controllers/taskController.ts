@@ -1,3 +1,4 @@
+// taskController.ts
 import { Request, Response } from 'express';
 import Task from '../models/Task';
 import { Task as TaskType } from '../types';
@@ -28,8 +29,13 @@ export const getTasks = async (req: AuthRequest, res: Response) => {
 export const addTask = async (req: AuthRequest, res: Response) => {
   const taskData = req.body;
   try {
+    // Normalize the date to midnight UTC
+    const taskDate = new Date(taskData.date);
+    taskDate.setUTCHours(0, 0, 0, 0); // Set to midnight UTC
+
     const task = new Task({
       ...taskData,
+      date: taskDate, // Use normalized date
       createdBy: req.user._id,
       createdAt: new Date(),
     });
@@ -51,6 +57,12 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
     }
     if (task.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
+    }
+    // Normalize the date to midnight UTC
+    if (updates.date) {
+      const taskDate = new Date(updates.date);
+      taskDate.setUTCHours(0, 0, 0, 0); // Set to midnight UTC
+      updates.date = taskDate;
     }
     const updatedTask = await Task.findByIdAndUpdate(id, updates, { new: true });
     const responseData = { ...updatedTask!.toJSON(), id: updatedTask!._id.toString() };

@@ -1,3 +1,4 @@
+// TaskModal.tsx
 import { useState, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
 import { useProfile } from "@/context/ProfileContext";
@@ -22,44 +23,43 @@ interface TaskModalProps {
 export function TaskModal({ open, onOpenChange, task, mode }: TaskModalProps) {
   const { addTask, updateTask, operations } = useApp();
   const { toast } = useToast();
-
   const [formData, setFormData] = useState({
-  title: '',
-  description: '',
-  date: new Date().toISOString().split('T')[0],
-  time: '',
-  operationId: 'none', // Changed from '' to 'none'
-  completed: false,
-  priority: 'media' as 'baixa' | 'media' | 'alta'
-});
+    title: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+    time: '',
+    operationId: 'none', // Changed from '' to 'none'
+    completed: false,
+    priority: 'media' as 'baixa' | 'media' | 'alta'
+  });
 
-useEffect(() => {
-  if (task && mode === 'edit') {
-    setFormData({
-      title: task.title,
-      description: task.description,
-      date: new Date(task.date).toISOString().split('T')[0],
-      time: task.time || '',
-      operationId: task.operationId || 'none', // Changed from '' to 'none'
-      completed: task.completed,
-      priority: task.priority
-    });
-  } else {
-    setFormData({
-      title: '',
-      description: '',
-      date: new Date().toISOString().split('T')[0],
-      time: '',
-      operationId: 'none', // Changed from '' to 'none'
-      completed: false,
-      priority: 'media'
-    });
-  }
-}, [task, mode, open]);
+  useEffect(() => {
+    if (task && mode === 'edit') {
+      setFormData({
+        title: task.title,
+        description: task.description,
+        date: new Date(task.date).toISOString().split('T')[0],
+        time: task.time || '',
+        operationId: task.operationId || 'none', // Changed from '' to 'none'
+        completed: task.completed,
+        priority: task.priority
+      });
+    } else {
+      setFormData({
+        title: '',
+        description: '',
+        date: new Date().toISOString().split('T')[0],
+        time: '',
+        operationId: 'none', // Changed from '' to 'none'
+        completed: false,
+        priority: 'media'
+      });
+    }
+  }, [task, mode, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+   
     if (!formData.title.trim()) {
       toast({
         title: "Erro",
@@ -69,21 +69,15 @@ useEffect(() => {
       return;
     }
 
-    // Criar a data corretamente sem problemas de timezone
-    const taskDate = new Date(formData.date + 'T12:00:00.000Z');
-    taskDate.setUTCFullYear(parseInt(formData.date.split('-')[0]));
-    taskDate.setUTCMonth(parseInt(formData.date.split('-')[1]) - 1);
-    taskDate.setUTCDate(parseInt(formData.date.split('-')[2]));
-
     const taskData = {
-  title: formData.title,
-  description: formData.description,
-  date: formData.date, // Passar como string para correção no AppContext
-  time: formData.time || undefined,
-  operationId: formData.operationId === 'none' ? undefined : formData.operationId, // Handle 'none' case
-  completed: formData.completed,
-  priority: formData.priority
-};
+      title: formData.title,
+      description: formData.description,
+      date: formData.date, // Send as YYYY-MM-DD string
+      time: formData.time || undefined,
+      operationId: formData.operationId === 'none' ? undefined : formData.operationId, // Handle 'none' case
+      completed: formData.completed,
+      priority: formData.priority
+    };
 
     if (mode === 'create') {
       addTask(taskData);
@@ -98,7 +92,6 @@ useEffect(() => {
         description: "Tarefa atualizada com sucesso!"
       });
     }
-
     onOpenChange(false);
   };
 
@@ -110,7 +103,7 @@ useEffect(() => {
             {mode === 'create' ? 'Nova Tarefa' : 'Editar Tarefa'}
           </DialogTitle>
         </DialogHeader>
-        
+       
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="title">Título *</Label>
@@ -122,7 +115,6 @@ useEffect(() => {
               required
             />
           </div>
-
           <div>
             <Label htmlFor="description">Descrição</Label>
             <Textarea
@@ -133,7 +125,6 @@ useEffect(() => {
               rows={3}
             />
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="date">Data *</Label>
@@ -144,7 +135,7 @@ useEffect(() => {
                 required
               />
             </div>
-            
+           
             <div>
               <Label htmlFor="time">Horário</Label>
               <Input
@@ -155,10 +146,9 @@ useEffect(() => {
               />
             </div>
           </div>
-
           <div>
             <Label htmlFor="priority">Prioridade</Label>
-            <Select value={formData.priority} onValueChange={(value: 'baixa' | 'media' | 'alta') => 
+            <Select value={formData.priority} onValueChange={(value: 'baixa' | 'media' | 'alta') =>
               setFormData({ ...formData, priority: value })
             }>
               <SelectTrigger>
@@ -171,40 +161,37 @@ useEffect(() => {
               </SelectContent>
             </Select>
           </div>
-
           <div>
-  <Label htmlFor="operation">Operação (Opcional)</Label>
-  <Select
-    value={formData.operationId}
-    onValueChange={(value) => setFormData({ ...formData, operationId: value })}
-  >
-    <SelectTrigger>
-      <SelectValue placeholder="Selecionar operação" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="none">Nenhuma operação</SelectItem> {/* Changed from value="" to value="none" */}
-      {operations.map((operation) => (
-        <SelectItem key={operation.id} value={operation.id}>
-          {operation.name}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-</div>
-
+            <Label htmlFor="operation">Operação (Opcional)</Label>
+            <Select
+              value={formData.operationId}
+              onValueChange={(value) => setFormData({ ...formData, operationId: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar operação" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhuma operação</SelectItem> {/* Changed from value="" to value="none" */}
+                {operations.map((operation) => (
+                  <SelectItem key={operation.id} value={operation.id}>
+                    {operation.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {mode === 'edit' && (
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="completed"
                 checked={formData.completed}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setFormData({ ...formData, completed: checked === true })
                 }
               />
               <Label htmlFor="completed">Tarefa concluída</Label>
             </div>
           )}
-
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
