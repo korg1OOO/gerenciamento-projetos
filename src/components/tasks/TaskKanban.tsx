@@ -15,13 +15,13 @@ import {
   useSensors,
   closestCenter,
   useDroppable,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   CheckSquare,
   Clock,
@@ -29,41 +29,43 @@ import {
   Edit3,
   Trash2,
   CalendarIcon,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
+import { toZonedTime, formatInTimeZone } from "date-fns-tz";
+import { timezone } from "@/utils/timezone"; // 'America/Sao_Paulo'
 
-type TaskStatus = 'todo' | 'in-progress' | 'completed';
+type TaskStatus = "todo" | "in-progress" | "completed";
 
 const COLUMN_TITLES = {
-  'todo': "A Fazer",
-  'in-progress': "Em Andamento", 
-  'completed': "Concluído"
+  todo: "A Fazer",
+  "in-progress": "Em Andamento",
+  completed: "Concluído",
 };
 
 const COLUMN_COLORS = {
-  'todo': "border-blue-500/50 bg-blue-500/5",
-  'in-progress': "border-yellow-500/50 bg-yellow-500/5",
-  'completed': "border-green-500/50 bg-green-500/5"
+  todo: "border-blue-500/50 bg-blue-500/5",
+  "in-progress": "border-yellow-500/50 bg-yellow-500/5",
+  completed: "border-green-500/50 bg-green-500/5",
 };
 
 const PRIORITY_COLORS = {
   baixa: "bg-green-500/10 text-green-500",
   media: "bg-yellow-500/10 text-yellow-500",
-  alta: "bg-red-500/10 text-red-500"
+  alta: "bg-red-500/10 text-red-500",
 };
 
 const PRIORITY_LABELS = {
   baixa: "Baixa",
-  media: "Média", 
-  alta: "Alta"
+  media: "Média",
+  alta: "Alta",
 };
 
-function SortableTaskCard({ 
-  task, 
-  onEdit, 
-  onDelete 
-}: { 
-  task: Task; 
+function SortableTaskCard({
+  task,
+  onEdit,
+  onDelete,
+}: {
+  task: Task;
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
 }) {
@@ -75,15 +77,17 @@ function SortableTaskCard({
     transition,
     isDragging,
   } = useSortable({ id: task.id });
-
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
-
-  const isOverdue = new Date(task.date) < new Date() && new Date(task.date).toDateString() !== new Date().toDateString();
-
+  const taskDate = toZonedTime(new Date(task.date), timezone);
+  const today = toZonedTime(new Date(), timezone);
+  const isOverdue =
+    taskDate < today &&
+    taskDate.toDateString() !== today.toDateString() &&
+    !task.completed;
   return (
     <Card
       ref={setNodeRef}
@@ -114,13 +118,14 @@ function SortableTaskCard({
             {task.description}
           </p>
         )}
-        
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <CalendarIcon className="h-3 w-3" />
-            <span>{new Date(task.date).toLocaleDateString('pt-BR')}</span>
-            {isOverdue && !task.completed && (
-              <Badge variant="destructive" className="text-xs">Atrasado</Badge>
+            <span>{formatInTimeZone(taskDate, timezone, "dd/MM/yyyy")}</span>
+            {isOverdue && (
+              <Badge variant="destructive" className="text-xs">
+                Atrasado
+              </Badge>
             )}
           </div>
           {task.time && (
@@ -130,7 +135,6 @@ function SortableTaskCard({
             </div>
           )}
         </div>
-
         <div className="flex items-center justify-between pt-2">
           <div className="flex gap-1">
             <Button
@@ -162,17 +166,17 @@ function SortableTaskCard({
   );
 }
 
-function DroppableColumn({ 
-  status, 
-  title, 
-  color, 
+function DroppableColumn({
+  status,
+  title,
+  color,
   tasks,
   onEdit,
-  onDelete
-}: { 
-  status: TaskStatus; 
-  title: string; 
-  color: string; 
+  onDelete,
+}: {
+  status: TaskStatus;
+  title: string;
+  color: string;
   tasks: Task[];
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
@@ -180,7 +184,6 @@ function DroppableColumn({
   const { setNodeRef, isOver } = useDroppable({
     id: status,
   });
-
   return (
     <div className="flex-1 min-w-[300px] max-w-[400px]">
       <div className="mb-4">
@@ -193,23 +196,24 @@ function DroppableColumn({
           </div>
         </div>
       </div>
-      
-      <SortableContext items={tasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
-        <div 
+      <SortableContext
+        items={tasks.map((task) => task.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div
           ref={setNodeRef}
           className={`space-y-3 min-h-96 p-2 rounded-lg border-2 border-dashed ${
-            isOver ? 'border-primary bg-primary/5' : 'border-border/50'
+            isOver ? "border-primary bg-primary/5" : "border-border/50"
           } transition-colors`}
         >
           {tasks.map((task) => (
-            <SortableTaskCard 
-              key={task.id} 
-              task={task} 
+            <SortableTaskCard
+              key={task.id}
+              task={task}
               onEdit={onEdit}
               onDelete={onDelete}
             />
           ))}
-          
           {tasks.length === 0 && (
             <Card className="border-2 border-dashed border-muted bg-muted/20">
               <CardContent className="p-6 text-center">
@@ -236,7 +240,7 @@ export function TaskKanban({ tasks, onEdit, onDelete }: TaskKanbanProps) {
   const { updateTask } = useApp();
   const { toast } = useToast();
   const [activeId, setActiveId] = useState<string | null>(null);
-  
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -244,21 +248,16 @@ export function TaskKanban({ tasks, onEdit, onDelete }: TaskKanbanProps) {
       },
     })
   );
-
   // Mapear tarefas para status do kanban
   const getTaskStatus = (task: Task): TaskStatus => {
-    if (task.completed) return 'completed';
-    
-    // Se tem uma data no passado e não está completa, consideramos em andamento
-    const taskDate = new Date(task.date);
-    const today = new Date();
+    if (task.completed) return "completed";
+    const taskDate = toZonedTime(new Date(task.date), timezone);
+    const today = toZonedTime(new Date(), timezone);
     today.setHours(0, 0, 0, 0);
     taskDate.setHours(0, 0, 0, 0);
-    
-    if (taskDate <= today) return 'in-progress';
-    return 'todo';
+    if (taskDate <= today) return "in-progress";
+    return "todo";
   };
-
   // Organizar tarefas por coluna
   const tasksByStatus = tasks.reduce((acc, task) => {
     const status = getTaskStatus(task);
@@ -268,69 +267,63 @@ export function TaskKanban({ tasks, onEdit, onDelete }: TaskKanbanProps) {
     acc[status].push(task);
     return acc;
   }, {} as Record<TaskStatus, Task[]>);
-
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   };
-
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
+
     if (!over) {
       setActiveId(null);
       return;
     }
-
     const activeId = active.id as string;
-    const activeTask = tasks.find(task => task.id === activeId);
-    
+    const activeTask = tasks.find((task) => task.id === activeId);
+
     if (!activeTask) {
       setActiveId(null);
       return;
     }
-
     // Determinar o novo status baseado na zona de drop
     let newStatus: TaskStatus | null = null;
-    
+
     // Primeiro, verificar se foi dropado em uma tarefa específica
-    const overTask = tasks.find(task => task.id === over.id);
+    const overTask = tasks.find((task) => task.id === over.id);
     if (overTask) {
       newStatus = getTaskStatus(overTask);
     } else {
       // Se não foi em uma tarefa, verificar se foi em uma coluna
-      const columnStatuses: TaskStatus[] = ['todo', 'in-progress', 'completed'];
+      const columnStatuses: TaskStatus[] = ["todo", "in-progress", "completed"];
       if (columnStatuses.includes(over.id as TaskStatus)) {
         newStatus = over.id as TaskStatus;
       }
     }
-
     // Atualizar tarefa baseado no novo status
     if (newStatus && newStatus !== getTaskStatus(activeTask)) {
       const updates: Partial<Task> = {};
-      
-      if (newStatus === 'completed') {
+
+      if (newStatus === "completed") {
         updates.completed = true;
       } else {
         updates.completed = false;
-        
+
         // Se movido para "em andamento", pode ajustar a data se necessário
-        if (newStatus === 'in-progress' && new Date(activeTask.date) > new Date()) {
-          updates.date = new Date(); // Mover para hoje se estava no futuro
+        if (
+          newStatus === "in-progress" &&
+          toZonedTime(new Date(activeTask.date), timezone) > today
+        ) {
+          updates.date = toZonedTime(new Date(), timezone); // Mover para hoje
         }
       }
-
       updateTask(activeId, updates);
       toast({
         title: "Status atualizado",
-        description: `Tarefa movida para ${COLUMN_TITLES[newStatus]}`
+        description: `Tarefa movida para ${COLUMN_TITLES[newStatus]}`,
       });
     }
-
     setActiveId(null);
   };
-
-  const activeTask = activeId ? tasks.find(task => task.id === activeId) : null;
-
+  const activeTask = activeId ? tasks.find((task) => task.id === activeId) : null;
   return (
     <DndContext
       sensors={sensors}
@@ -354,12 +347,11 @@ export function TaskKanban({ tasks, onEdit, onDelete }: TaskKanbanProps) {
           );
         })}
       </div>
-
       <DragOverlay>
         {activeTask ? (
           <div className="opacity-95 rotate-3">
-            <SortableTaskCard 
-              task={activeTask} 
+            <SortableTaskCard
+              task={activeTask}
               onEdit={onEdit}
               onDelete={onDelete}
             />
