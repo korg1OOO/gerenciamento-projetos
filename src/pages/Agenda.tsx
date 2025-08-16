@@ -24,19 +24,19 @@ import {
   Trash2,
   List,
   LayoutDashboard,
-  CalendarDays
+  CalendarDays,
 } from "lucide-react";
 
 const PRIORITY_LABELS = {
   baixa: "Baixa",
   media: "Média",
-  alta: "Alta"
+  alta: "Alta",
 };
 
 const PRIORITY_COLORS = {
   baixa: "bg-green-500/20 border-green-500/50 text-green-700 dark:text-green-300",
   media: "bg-yellow-500/20 border-yellow-500/50 text-yellow-700 dark:text-yellow-300",
-  alta: "bg-red-500/20 border-red-500/50 text-red-700 dark:text-red-300"
+  alta: "bg-red-500/20 border-red-500/50 text-red-700 dark:text-red-300",
 };
 
 export default function Agenda() {
@@ -50,20 +50,20 @@ export default function Agenda() {
   const [filters, setFilters] = useState({
     status: "all" as "all" | "pending" | "completed" | "overdue",
     priority: "all" as "all" | "baixa" | "media" | "alta",
-    operationId: "all" as string
+    operationId: "all" as string,
   });
   // Formulário para nova tarefa
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split("T")[0], // Current date: 2025-08-16
     time: "",
     operationId: "none",
-    priority: "media" as "baixa" | "media" | "alta"
+    priority: "media" as "baixa" | "media" | "alta",
   });
   // Abrir modal automaticamente se veio da URL
   useEffect(() => {
-    if (searchParams.get('action') === 'new') {
+    if (searchParams.get("action") === "new") {
       setIsNewModalOpen(true);
     }
   }, [searchParams]);
@@ -71,21 +71,21 @@ export default function Agenda() {
     setFormData({
       title: "",
       description: "",
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split("T")[0], // Reset to current date
       time: "",
       operationId: "none",
-      priority: "media"
+      priority: "media",
     });
     setEditingTask(null);
   };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-   
+
     if (!formData.title.trim()) {
       toast({
         title: "Erro",
         description: "Título da tarefa é obrigatório",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -96,19 +96,19 @@ export default function Agenda() {
       time: formData.time || undefined,
       operationId: formData.operationId === "none" ? undefined : formData.operationId,
       priority: formData.priority,
-      completed: false
+      completed: false,
     };
     if (editingTask) {
       updateTask(editingTask.id, taskData);
       toast({
         title: "Sucesso",
-        description: "Tarefa atualizada com sucesso!"
+        description: "Tarefa atualizada com sucesso!",
       });
     } else {
       addTask(taskData);
       toast({
         title: "Sucesso",
-        description: "Nova tarefa criada com sucesso!"
+        description: "Nova tarefa criada com sucesso!",
       });
     }
     setIsNewModalOpen(false);
@@ -119,10 +119,10 @@ export default function Agenda() {
     setFormData({
       title: task.title,
       description: task.description,
-      date: new Date(task.date).toISOString().split('T')[0],
+      date: new Date(task.date).toISOString().split("T")[0],
       time: task.time || "",
       operationId: task.operationId || "none",
-      priority: task.priority
+      priority: task.priority,
     });
     setIsNewModalOpen(true);
   };
@@ -131,7 +131,7 @@ export default function Agenda() {
       deleteTask(id);
       toast({
         title: "Sucesso",
-        description: "Tarefa excluída com sucesso!"
+        description: "Tarefa excluída com sucesso!",
       });
     }
   };
@@ -139,19 +139,22 @@ export default function Agenda() {
     updateTask(task.id, { completed: !task.completed });
     toast({
       title: task.completed ? "Tarefa reativada" : "Tarefa concluída",
-      description: task.completed ? "Tarefa marcada como pendente" : "Parabéns! Tarefa finalizada"
+      description: task.completed
+        ? "Tarefa marcada como pendente"
+        : "Parabéns! Tarefa finalizada",
     });
   };
   // Filtrar tarefas baseado nos filtros ativos
   const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
+    return tasks.filter((task) => {
       // Filtro por status
       if (filters.status === "pending" && task.completed) return false;
       if (filters.status === "completed" && !task.completed) return false;
       if (filters.status === "overdue") {
-        const isOverdue = new Date(task.date) < new Date() &&
-                         new Date(task.date).toDateString() !== new Date().toDateString() &&
-                         !task.completed;
+        const isOverdue =
+          new Date(task.date) < new Date() &&
+          new Date(task.date).toDateString() !== new Date().toDateString() &&
+          !task.completed;
         if (!isOverdue) return false;
       }
       // Filtro por prioridade
@@ -169,59 +172,81 @@ export default function Agenda() {
     );
 
     sortedTasks.forEach((task) => {
-      // Convert to local date string directly
+      // Format date to dd/MM/yyyy in UTC-3 (America/Sao_Paulo)
       const taskDate = new Date(task.date);
-      const localDate = taskDate.toLocaleDateString('en-CA'); // 'en-CA' gives YYYY-MM-DD
-      if (!groups[localDate]) {
-        groups[localDate] = [];
+      const formatter = new Intl.DateTimeFormat("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+      const dateKey = formatter.format(taskDate); // e.g., "16/08/2025"
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
       }
-      groups[localDate].push(task);
+      groups[dateKey].push(task);
     });
 
     return groups;
   }, [filteredTasks]);
-  const pendingTasks = tasks.filter(task => !task.completed);
-  const completedTasks = tasks.filter(task => task.completed);
-  const highPriorityTasks = pendingTasks.filter(task => task.priority === 'alta');
-  const overdueTasks = tasks.filter(task => {
-    const isOverdue = new Date(task.date) < new Date() &&
-                     new Date(task.date).toDateString() !== new Date().toDateString() &&
-                     !task.completed;
+  const pendingTasks = tasks.filter((task) => !task.completed);
+  const completedTasks = tasks.filter((task) => task.completed);
+  const highPriorityTasks = pendingTasks.filter((task) => task.priority === "alta");
+  const overdueTasks = tasks.filter((task) => {
+    const isOverdue =
+      new Date(task.date) < new Date() &&
+      new Date(task.date).toDateString() !== new Date().toDateString() &&
+      !task.completed;
     return isOverdue;
   });
   // Função para aplicar filtros através dos cards
-  const handleCardFilter = (filterType: "pending" | "completed" | "high-priority" | "total") => {
-    setFilters(prev => ({
+  const handleCardFilter = (
+    filterType: "pending" | "completed" | "high-priority" | "total"
+  ) => {
+    setFilters((prev) => ({
       ...prev,
-      status: filterType === "pending" ? "pending" :
-             filterType === "completed" ? "completed" : "all",
-      priority: filterType === "high-priority" ? "alta" : "all"
+      status:
+        filterType === "pending"
+          ? "pending"
+          : filterType === "completed"
+          ? "completed"
+          : "all",
+      priority: filterType === "high-priority" ? "alta" : "all",
     }));
   };
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const adjustedDate = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
+    const formatter = new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
+    const formattedDate = formatter.format(date);
 
-    if (adjustedDate.toDateString() === today.toDateString()) {
+    if (
+      date.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) ===
+      today.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
+    ) {
       return "Hoje";
-    } else if (adjustedDate.toDateString() === tomorrow.toDateString()) {
+    } else if (
+      date.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) ===
+      tomorrow.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
+    ) {
       return "Amanhã";
     } else {
-      return adjustedDate.toLocaleDateString('pt-BR', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long'
-      });
+      return formattedDate;
     }
   };
   const isOverdue = (dateString: string) => {
     const taskDate = new Date(dateString);
-    const adjustedDate = new Date(taskDate.getTime() - taskDate.getTimezoneOffset() * 60 * 1000);
     const today = new Date();
-    return adjustedDate < today && adjustedDate.toDateString() !== today.toDateString();
+    return (
+      taskDate < today && taskDate.toDateString() !== today.toDateString()
+    );
   };
   return (
     <div className="space-y-6">
@@ -234,23 +259,40 @@ export default function Agenda() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "list" | "kanban" | "calendar")}>
+          <Tabs
+            value={viewMode}
+            onValueChange={(value) =>
+              setViewMode(value as "list" | "kanban" | "calendar")
+            }
+          >
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="list" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <TabsTrigger
+                value="list"
+                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              >
                 <List className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Lista</span>
               </TabsTrigger>
-              <TabsTrigger value="kanban" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <TabsTrigger
+                value="kanban"
+                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              >
                 <LayoutDashboard className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Kanban</span>
               </TabsTrigger>
-              <TabsTrigger value="calendar" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <TabsTrigger
+                value="calendar"
+                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              >
                 <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Calendário</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Dialog open={isNewModalOpen} onOpenChange={setIsNewModalOpen}>
+          <Dialog
+            open={isNewModalOpen}
+            onOpenChange={setIsNewModalOpen}
+          >
             <DialogTrigger asChild>
               <Button className="bg-primary hover:bg-primary/90">
                 <Plus className="h-4 w-4 mr-2" />
@@ -269,7 +311,9 @@ export default function Agenda() {
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     placeholder="Digite o título da tarefa..."
                     required
                   />
@@ -281,7 +325,9 @@ export default function Agenda() {
                       id="date"
                       type="date"
                       value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, date: e.target.value })
+                      }
                       required
                     />
                   </div>
@@ -292,7 +338,9 @@ export default function Agenda() {
                       type="text"
                       placeholder="Ex: 14:30-16:00"
                       value={formData.time}
-                      onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, time: e.target.value })
+                      }
                     />
                   </div>
                 </div>
@@ -300,14 +348,18 @@ export default function Agenda() {
                   <Label htmlFor="priority">Prioridade</Label>
                   <Select
                     value={formData.priority}
-                    onValueChange={(value) => setFormData({ ...formData, priority: value as any })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, priority: value as any })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(PRIORITY_LABELS).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                        <SelectItem key={key} value={key}>
+                          {label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -316,7 +368,9 @@ export default function Agenda() {
                   <Label htmlFor="operation">Operação Relacionada</Label>
                   <Select
                     value={formData.operationId}
-                    onValueChange={(value) => setFormData({ ...formData, operationId: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, operationId: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma operação..." />
@@ -336,7 +390,9 @@ export default function Agenda() {
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     placeholder="Descreva os detalhes da tarefa..."
                     rows={3}
                   />
@@ -366,8 +422,18 @@ export default function Agenda() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <Label htmlFor="status-filter" className="text-sm font-medium text-card-foreground">Status</Label>
-              <Select value={filters.status} onValueChange={(value: any) => setFilters(prev => ({ ...prev, status: value }))}>
+              <Label
+                htmlFor="status-filter"
+                className="text-sm font-medium text-card-foreground"
+              >
+                Status
+              </Label>
+              <Select
+                value={filters.status}
+                onValueChange={(value: any) =>
+                  setFilters((prev) => ({ ...prev, status: value }))
+                }
+              >
                 <SelectTrigger id="status-filter">
                   <SelectValue />
                 </SelectTrigger>
@@ -380,8 +446,18 @@ export default function Agenda() {
               </Select>
             </div>
             <div className="flex-1">
-              <Label htmlFor="priority-filter" className="text-sm font-medium text-card-foreground">Prioridade</Label>
-              <Select value={filters.priority} onValueChange={(value: any) => setFilters(prev => ({ ...prev, priority: value }))}>
+              <Label
+                htmlFor="priority-filter"
+                className="text-sm font-medium text-card-foreground"
+              >
+                Prioridade
+              </Label>
+              <Select
+                value={filters.priority}
+                onValueChange={(value: any) =>
+                  setFilters((prev) => ({ ...prev, priority: value }))
+                }
+              >
                 <SelectTrigger id="priority-filter">
                   <SelectValue />
                 </SelectTrigger>
@@ -394,8 +470,18 @@ export default function Agenda() {
               </Select>
             </div>
             <div className="flex-1">
-              <Label htmlFor="operation-filter" className="text-sm font-medium text-card-foreground">Operação</Label>
-              <Select value={filters.operationId} onValueChange={(value) => setFilters(prev => ({ ...prev, operationId: value }))}>
+              <Label
+                htmlFor="operation-filter"
+                className="text-sm font-medium text-card-foreground"
+              >
+                Operação
+              </Label>
+              <Select
+                value={filters.operationId}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({ ...prev, operationId: value }))
+                }
+              >
                 <SelectTrigger id="operation-filter">
                   <SelectValue />
                 </SelectTrigger>
@@ -412,7 +498,9 @@ export default function Agenda() {
             <div className="flex items-end">
               <Button
                 variant="outline"
-                onClick={() => setFilters({ status: "all", priority: "all", operationId: "all" })}
+                onClick={() =>
+                  setFilters({ status: "all", priority: "all", operationId: "all" })
+                }
                 className="whitespace-nowrap"
               >
                 Limpar Filtros
@@ -490,136 +578,153 @@ export default function Agenda() {
       </div>
       {/* Conteúdo baseado na visualização selecionada */}
       <div className="w-full overflow-hidden">
-      {viewMode === "list" ? (
-        /* Lista de tarefas agrupadas por data */
-        <div className="space-y-4 sm:space-y-6">
-        {Object.keys(groupedTasks).length > 0 ? (
-          Object.entries(groupedTasks).map(([dateString, dayTasks]) => (
-            <Card key={dateString} className="border-border bg-card shadow-subtle">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base sm:text-lg text-card-foreground flex flex-col sm:flex-row sm:items-center gap-2">
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                    {formatDate(dateString)}
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {isOverdue(dateString) && (
-                      <Badge variant="destructive" className="text-xs">Atrasado</Badge>
-                    )}
-                    <Badge variant="outline" className="text-xs">
-                      {dayTasks.length} {dayTasks.length === 1 ? 'tarefa' : 'tarefas'}
-                    </Badge>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {dayTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className={`flex items-start gap-3 p-3 sm:p-4 rounded-lg border transition-fast shadow-subtle ${
-                      task.completed
-                        ? 'bg-muted/50 border-muted opacity-75'
-                        : 'bg-card border-border hover:border-primary/50 hover:shadow-card'
-                    }`}
-                  >
-                    <Checkbox
-                      checked={task.completed}
-                      onCheckedChange={() => handleToggleComplete(task)}
-                      className="mt-1"
-                    />
-                   
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-start justify-between">
-                        <h4 className={`font-medium ${
-                          task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
-                        }`}>
-                          {task.title}
-                        </h4>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge className={`border text-xs ${PRIORITY_COLORS[task.priority]}`}>
-                            {PRIORITY_LABELS[task.priority]}
+        {viewMode === "list" ? (
+          /* Lista de tarefas agrupadas por data */
+          <div className="space-y-4 sm:space-y-6">
+            {Object.keys(groupedTasks).length > 0 ? (
+              Object.entries(groupedTasks).map(([dateString, dayTasks]) => (
+                <Card key={dateString} className="border-border bg-card shadow-subtle">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg text-card-foreground flex flex-col sm:flex-row sm:items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                        {dateString} {/* Display as dd/MM/yyyy */}
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {isOverdue(dateString) && (
+                          <Badge variant="destructive" className="text-xs">
+                            Atrasado
                           </Badge>
-                          {isOverdue(dateString) && !task.completed && (
-                            <Badge variant="destructive" className="text-xs">Atrasado</Badge>
+                        )}
+                        <Badge variant="outline" className="text-xs">
+                          {dayTasks.length}{" "}
+                          {dayTasks.length === 1 ? "tarefa" : "tarefas"}
+                        </Badge>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {dayTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className={`flex items-start gap-3 p-3 sm:p-4 rounded-lg border transition-fast shadow-subtle ${
+                          task.completed
+                            ? "bg-muted/50 border-muted opacity-75"
+                            : "bg-card border-border hover:border-primary/50 hover:shadow-card"
+                        }`}
+                      >
+                        <Checkbox
+                          checked={task.completed}
+                          onCheckedChange={() => handleToggleComplete(task)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-start justify-between">
+                            <h4
+                              className={`font-medium ${
+                                task.completed
+                                  ? "line-through text-muted-foreground"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {task.title}
+                            </h4>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge
+                                className={`border text-xs ${PRIORITY_COLORS[task.priority]}`}
+                              >
+                                {PRIORITY_LABELS[task.priority]}
+                              </Badge>
+                              {isOverdue(dateString) && !task.completed && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Atrasado
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          {task.description && (
+                            <p
+                              className={`text-sm ${
+                                task.completed
+                                  ? "text-muted-foreground"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {task.description}
+                            </p>
                           )}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {task.time && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                <span>{task.time}</span>
+                              </div>
+                            )}
+                            {task.operationId && (
+                              <Badge variant="outline" className="text-xs">
+                                {operations.find(
+                                  (op) => op.id === task.operationId
+                                )?.name || "Operação N/A"}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(task)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(task.id)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      {task.description && (
-                        <p className={`text-sm ${
-                          task.completed ? 'text-muted-foreground' : 'text-muted-foreground'
-                        }`}>
-                          {task.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {task.time && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            <span>{task.time}</span>
-                          </div>
-                        )}
-                        {task.operationId && (
-                          <Badge variant="outline" className="text-xs">
-                            {operations.find(op => op.id === task.operationId)?.name || "Operação N/A"}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(task)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(task.id)}
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))
+                    ))}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card className="border-border bg-card shadow-subtle">
+                <CardContent className="p-6 sm:p-8 text-center">
+                  <CalendarIcon className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-base sm:text-lg font-medium text-card-foreground mb-2">
+                    Nenhuma tarefa encontrada
+                  </h3>
+                  <p className="text-sm sm:text-base text-muted-foreground mb-4">
+                    Comece criando sua primeira tarefa para organizar seu
+                    trabalho.
+                  </p>
+                  <Button
+                    onClick={() => setIsNewModalOpen(true)}
+                    className="bg-primary hover:bg-primary/90 shadow-sm"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Primeira Tarefa
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        ) : viewMode === "kanban" ? (
+          /* Kanban View */
+          <div className="w-full">
+            <TaskKanban tasks={filteredTasks} onEdit={handleEdit} onDelete={handleDelete} />
+          </div>
         ) : (
-          <Card className="border-border bg-card shadow-subtle">
-            <CardContent className="p-6 sm:p-8 text-center">
-              <CalendarIcon className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-base sm:text-lg font-medium text-card-foreground mb-2">
-                Nenhuma tarefa encontrada
-              </h3>
-              <p className="text-sm sm:text-base text-muted-foreground mb-4">
-                Comece criando sua primeira tarefa para organizar seu trabalho.
-              </p>
-              <Button
-                onClick={() => setIsNewModalOpen(true)}
-                className="bg-primary hover:bg-primary/90 shadow-sm"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Primeira Tarefa
-              </Button>
-            </CardContent>
-          </Card>
+          /* Calendar View */
+          <div className="w-full">
+            <CalendarView tasks={filteredTasks} onEdit={handleEdit} onDelete={handleDelete} />
+          </div>
         )}
-        </div>
-      ) : viewMode === "kanban" ? (
-        /* Kanban View */
-        <div className="w-full">
-          <TaskKanban tasks={filteredTasks} onEdit={handleEdit} onDelete={handleDelete} />
-        </div>
-      ) : (
-        /* Calendar View */
-        <div className="w-full">
-          <CalendarView tasks={filteredTasks} onEdit={handleEdit} onDelete={handleDelete} />
-        </div>
-      )}
       </div>
       {/* Botão floating para mobile */}
       <div className="fixed bottom-6 right-6 md:hidden z-50">
