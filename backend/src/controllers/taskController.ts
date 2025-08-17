@@ -29,9 +29,9 @@ export const getTasks = async (req: AuthRequest, res: Response) => {
 export const addTask = async (req: AuthRequest, res: Response) => {
   const taskData = req.body;
   try {
-    // Normalize the date to midnight UTC
+    // Normalize the date to midnight local (UTC-3), stored as 03:00 UTC
     const taskDate = new Date(taskData.date);
-    taskDate.setUTCHours(0, 0, 0, 0); // Set to midnight UTC
+    taskDate.setUTCHours(3, 0, 0, 0); // Adjusted for UTC-3
 
     const task = new Task({
       ...taskData,
@@ -58,10 +58,10 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
     if (task.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Permission denied' });
     }
-    // Normalize the date to midnight UTC
+    // Normalize the date to midnight local (UTC-3), stored as 03:00 UTC
     if (updates.date) {
       const taskDate = new Date(updates.date);
-      taskDate.setUTCHours(0, 0, 0, 0); // Set to midnight UTC
+      taskDate.setUTCHours(3, 0, 0, 0); // Adjusted for UTC-3
       updates.date = taskDate;
     }
     const updatedTask = await Task.findByIdAndUpdate(id, updates, { new: true });

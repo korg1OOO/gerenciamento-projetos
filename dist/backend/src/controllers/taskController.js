@@ -29,9 +29,9 @@ exports.getTasks = getTasks;
 const addTask = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const taskData = req.body;
     try {
-        // Normalize the date to midnight UTC
+        // Normalize the date to midnight local (UTC-3), stored as 03:00 UTC
         const taskDate = new Date(taskData.date);
-        taskDate.setUTCHours(0, 0, 0, 0); // Set to midnight UTC
+        taskDate.setUTCHours(3, 0, 0, 0); // Adjusted for UTC-3
         const task = new Task_1.default(Object.assign(Object.assign({}, taskData), { date: taskDate, createdBy: req.user._id, createdAt: new Date() }));
         yield task.save();
         const responseData = Object.assign(Object.assign({}, task.toJSON()), { id: task._id.toString() });
@@ -53,10 +53,10 @@ const updateTask = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (task.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Permission denied' });
         }
-        // Normalize the date to midnight UTC
+        // Normalize the date to midnight local (UTC-3), stored as 03:00 UTC
         if (updates.date) {
             const taskDate = new Date(updates.date);
-            taskDate.setUTCHours(0, 0, 0, 0); // Set to midnight UTC
+            taskDate.setUTCHours(3, 0, 0, 0); // Adjusted for UTC-3
             updates.date = taskDate;
         }
         const updatedTask = yield Task_1.default.findByIdAndUpdate(id, updates, { new: true });
