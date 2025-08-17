@@ -31,7 +31,7 @@ import {
   CalendarIcon,
   AlertCircle,
 } from "lucide-react";
-import { toZonedTime, formatInTimeZone } from "date-fns-tz";
+import { toZonedTime, formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { timezone } from "@/utils/timezone"; // 'America/Sao_Paulo'
 
 type TaskStatus = "todo" | "in-progress" | "completed";
@@ -60,6 +60,14 @@ const PRIORITY_LABELS = {
   alta: "Alta",
 };
 
+// Helper to parse YYYY-MM-DD as local date in timezone
+const parseLocalDate = (dateString: string, tz: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  const naiveLocal = new Date(year, month - 1, day);
+  const utcDate = fromZonedTime(naiveLocal, tz);
+  return toZonedTime(utcDate, tz);
+};
+
 function SortableTaskCard({
   task,
   onEdit,
@@ -82,7 +90,7 @@ function SortableTaskCard({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
-  const taskDate = toZonedTime(new Date(task.date), timezone);
+  const taskDate = parseLocalDate(task.date, timezone);
   const today = toZonedTime(new Date(), timezone);
   const isOverdue =
     taskDate < today &&
@@ -251,7 +259,7 @@ export function TaskKanban({ tasks, onEdit, onDelete }: TaskKanbanProps) {
   // Mapear tarefas para status do kanban
   const getTaskStatus = (task: Task): TaskStatus => {
     if (task.completed) return "completed";
-    const taskDate = toZonedTime(new Date(task.date), timezone);
+    const taskDate = parseLocalDate(task.date, timezone);
     const today = toZonedTime(new Date(), timezone);
     today.setHours(0, 0, 0, 0);
     taskDate.setHours(0, 0, 0, 0);
@@ -310,9 +318,9 @@ export function TaskKanban({ tasks, onEdit, onDelete }: TaskKanbanProps) {
         // Se movido para "em andamento", pode ajustar a data se necessário
         if (
           newStatus === "in-progress" &&
-          toZonedTime(new Date(activeTask.date), timezone) > today
+          parseLocalDate(activeTask.date, timezone) > toZonedTime(new Date(), timezone)
         ) {
-          updates.date = toZonedTime(new Date(), timezone); // Mover para hoje
+          updates.date = formatInTimeZone(toZonedTime(new Date(), timezone), timezone, "yyyy-MM-dd");
         }
       }
       updateTask(activeId, updates);

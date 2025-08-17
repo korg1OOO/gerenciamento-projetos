@@ -26,8 +26,10 @@ import {
   LayoutDashboard,
   CalendarDays,
 } from "lucide-react";
-import { toZonedTime, formatInTimeZone } from "date-fns-tz";
+import { toZonedTime, formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { timezone } from "@/utils/timezone"; // 'America/Sao_Paulo'
+import { parse as parseDateFns, isSameDay } from "date-fns";
+import ptBR from "date-fns/locale/pt-BR";
 
 const PRIORITY_LABELS = {
   baixa: "Baixa",
@@ -80,6 +82,15 @@ export default function Agenda() {
     });
     setEditingTask(null);
   };
+
+  // Helper to parse YYYY-MM-DD as local date in timezone
+  const parseLocalDate = (dateString: string, tz: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const naiveLocal = new Date(year, month - 1, day);
+    const utcDate = fromZonedTime(naiveLocal, tz);
+    return toZonedTime(utcDate, tz);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
@@ -120,7 +131,7 @@ export default function Agenda() {
     setFormData({
       title: task.title,
       description: task.description,
-      date: formatInTimeZone(toZonedTime(new Date(task.date), timezone), timezone, "yyyy-MM-dd"),
+      date: formatInTimeZone(parseLocalDate(task.date, timezone), timezone, "yyyy-MM-dd"),
       time: task.time || "",
       operationId: task.operationId || "none",
       priority: task.priority,
@@ -148,7 +159,7 @@ export default function Agenda() {
   // Filtrar tarefas baseado nos filtros ativos
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
-      const taskDate = toZonedTime(new Date(task.date), timezone);
+      const taskDate = parseLocalDate(task.date, timezone);
       const today = toZonedTime(new Date(), timezone);
       // Filtro por status
       if (filters.status === "pending" && task.completed) return false;
@@ -168,10 +179,10 @@ export default function Agenda() {
   const groupedTasks = useMemo(() => {
     const groups: Record<string, Task[]> = {};
     const sortedTasks = [...filteredTasks].sort(
-      (a, b) => toZonedTime(new Date(a.date), timezone).getTime() - toZonedTime(new Date(b.date), timezone).getTime()
+      (a, b) => parseLocalDate(a.date, timezone).getTime() - parseLocalDate(b.date, timezone).getTime()
     );
     sortedTasks.forEach((task) => {
-      const taskDate = toZonedTime(new Date(task.date), timezone);
+      const taskDate = parseLocalDate(task.date, timezone);
       const dateKey = formatInTimeZone(taskDate, timezone, "dd/MM/yyyy"); // e.g., "09/08/2025"
       if (!groups[dateKey]) {
         groups[dateKey] = [];
@@ -184,7 +195,7 @@ export default function Agenda() {
   const completedTasks = tasks.filter((task) => task.completed);
   const highPriorityTasks = pendingTasks.filter((task) => task.priority === "alta");
   const overdueTasks = tasks.filter((task) => {
-    const taskDate = toZonedTime(new Date(task.date), timezone);
+    const taskDate = parseLocalDate(task.date, timezone);
     const today = toZonedTime(new Date(), timezone);
     const isOverdue = taskDate < today && taskDate.toDateString() !== today.toDateString() && !task.completed;
     return isOverdue;
@@ -205,7 +216,7 @@ export default function Agenda() {
     }));
   };
   const formatDate = (dateString: string) => {
-    const date = toZonedTime(new Date(dateString), timezone);
+    const date = parseLocalDate(dateString, timezone);
     const today = toZonedTime(new Date(), timezone);
     const tomorrow = toZonedTime(new Date(), timezone);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -221,7 +232,9 @@ export default function Agenda() {
     }
   };
   const isOverdue = (dateString: string) => {
-    const taskDate = toZonedTime(new Date(dateString), timezone);
+    const naiveDate = parseDateFns(dateString, "dd/MM/yyyy", new Date(), { locale: ptBR });
+    const utcDate = fromZonedTime(naiveLocal, tz);
+    const taskDate = toZonedTime(utcDate, timezone);
     const today = toZonedTime(new Date(), timezone);
     return taskDate < today && taskDate.toDateString() !== today.toDateString();
   };

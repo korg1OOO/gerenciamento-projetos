@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { toZonedTime, formatInTimeZone } from "date-fns-tz";
+import { toZonedTime, formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { timezone } from "@/utils/timezone"; // 'America/Sao_Paulo'
 
 interface CalendarViewProps {
@@ -40,25 +40,34 @@ export function CalendarView({ tasks, onEdit, onDelete }: CalendarViewProps) {
   const [selectedDayTasks, setSelectedDayTasks] = useState<Task[]>([]);
   const [isDayModalOpen, setIsDayModalOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // Helper to parse YYYY-MM-DD as local date in timezone
+  const parseLocalDate = (dateString: string, tz: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const naiveLocal = new Date(year, month - 1, day);
+    const utcDate = fromZonedTime(naiveLocal, tz);
+    return toZonedTime(utcDate, tz);
+  };
+
   // Obter tarefas do mês atual
   const monthTasks = useMemo(() => {
     const start = toZonedTime(startOfMonth(currentMonth), timezone);
     const end = toZonedTime(endOfMonth(currentMonth), timezone);
     return tasks.filter((task) => {
-      const taskDate = toZonedTime(new Date(task.date), timezone);
+      const taskDate = parseLocalDate(task.date, timezone);
       return taskDate >= start && taskDate <= end;
     });
   }, [tasks, currentMonth]);
   // Obter tarefas por dia
   const getTasksForDay = (date: Date) => {
     return tasks.filter((task) =>
-      isSameDay(toZonedTime(new Date(task.date), timezone), date)
+      isSameDay(parseLocalDate(task.date, timezone), date)
     );
   };
   // Determinar status da tarefa
   const getTaskStatus = (task: Task) => {
     if (task.completed) return "completed";
-    const taskDate = toZonedTime(new Date(task.date), timezone);
+    const taskDate = parseLocalDate(task.date, timezone);
     const today = toZonedTime(new Date(), timezone);
     today.setHours(0, 0, 0, 0);
     taskDate.setHours(0, 0, 0, 0);
