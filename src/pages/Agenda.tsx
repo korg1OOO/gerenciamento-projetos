@@ -83,10 +83,25 @@ export default function Agenda() {
     setEditingTask(null);
   };
 
-  // Helper to parse YYYY-MM-DD as local date in timezone
+  // Helper to parse YYYY-MM-DD as local date in timezone with validation
   const parseLocalDate = (dateString: string, tz: string): Date => {
-    const [year, month, day] = dateString.split('-').map(Number);
+    if (typeof dateString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      console.error(`Invalid date string format: ${dateString}`);
+      return toZonedTime(new Date(), tz); // Fallback to current date
+    }
+    const [yearStr, monthStr, dayStr] = dateString.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const day = parseInt(dayStr, 10);
+    if (isNaN(year) || isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+      console.error(`Invalid date components: ${dateString}`);
+      return toZonedTime(new Date(), tz); // Fallback
+    }
     const naiveLocal = new Date(year, month - 1, day);
+    if (isNaN(naiveLocal.getTime())) {
+      console.error(`Created invalid Date from: ${dateString}`);
+      return toZonedTime(new Date(), tz); // Fallback
+    }
     const utcDate = fromZonedTime(naiveLocal, tz);
     return toZonedTime(utcDate, tz);
   };
@@ -128,10 +143,17 @@ export default function Agenda() {
   };
   const handleEdit = (task: Task) => {
     setEditingTask(task);
+    let editDate;
+    try {
+      editDate = formatInTimeZone(parseLocalDate(task.date, timezone), timezone, "yyyy-MM-dd");
+    } catch (error) {
+      console.error('Invalid date in edit:', task.date, error);
+      editDate = formatInTimeZone(toZonedTime(new Date(), timezone), timezone, "yyyy-MM-dd");
+    }
     setFormData({
       title: task.title,
       description: task.description,
-      date: formatInTimeZone(parseLocalDate(task.date, timezone), timezone, "yyyy-MM-dd"),
+      date: editDate,
       time: task.time || "",
       operationId: task.operationId || "none",
       priority: task.priority,
@@ -159,7 +181,13 @@ export default function Agenda() {
   // Filtrar tarefas baseado nos filtros ativos
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
-      const taskDate = parseLocalDate(task.date, timezone);
+      let taskDate;
+      try {
+        taskDate = parseLocalDate(task.date, timezone);
+      } catch (error) {
+        console.error('Invalid task date in filter:', task.date, error);
+        return false; // Skip invalid dates
+      }
       const today = toZonedTime(new Date(), timezone);
       // Filtro por status
       if (filters.status === "pending" && task.completed) return false;
@@ -177,25 +205,36 @@ export default function Agenda() {
   }, [tasks, filters]);
   // Agrupar tarefas filtradas por data
   const groupedTasks = useMemo(() => {
-    const groups: Record<string, Task[]> = {};
-    const sortedTasks = [...filteredTasks].sort(
-      (a, b) => parseLocalDate(a.date, timezone).getTime() - parseLocalDate(b.date, timezone).getTime()
-    );
-    sortedTasks.forEach((task) => {
-      const taskDate = parseLocalDate(task.date, timezone);
-      const dateKey = formatInTimeZone(taskDate, timezone, "dd/MM/yyyy"); // e.g., "09/08/2025"
-      if (!groups[dateKey]) {
-        groups[dateKey] = [];
-      }
-      groups[dateKey].push(task);
-    });
-    return groups;
+    try {
+      const groups: Record<string, Task[]> = {};
+      const sortedTasks = [...filteredTasks].sort(
+        (a, b) => parseLocalDate(a.date, timezone).getTime() - parseLocalDate(b.date, timezone).getTime()
+      );
+      sortedTasks.forEach((task) => {
+        const taskDate = parseLocalDate(task.date, timezone);
+        const dateKey = formatInTimeZone(taskDate, timezone, "dd/MM/yyyy"); // e.g., "09/08/2025"
+        if (!groups[dateKey]) {
+          groups[dateKey] = [];
+        }
+        groups[dateKey].push(task);
+      });
+      return groups;
+    } catch (error) {
+      console.error('Error in groupedTasks:', error);
+      return {};
+    }
   }, [filteredTasks]);
   const pendingTasks = tasks.filter((task) => !task.completed);
   const completedTasks = tasks.filter((task) => task.completed);
   const highPriorityTasks = pendingTasks.filter((task) => task.priority === "alta");
   const overdueTasks = tasks.filter((task) => {
-    const taskDate = parseLocalDate(task.date, timezone);
+    let taskDate;
+    try {
+      taskDate = parseLocalDate(task.date, timezone);
+    } catch (error) {
+      console.error('Invalid task date in overdue:', task.date, error);
+      return false;
+    }
     const today = toZonedTime(new Date(), timezone);
     const isOverdue = taskDate < today && taskDate.toDateString() !== today.toDateString() && !task.completed;
     return isOverdue;
@@ -216,7 +255,13 @@ export default function Agenda() {
     }));
   };
   const formatDate = (dateString: string) => {
-    const date = parseLocalDate(dateString, timezone);
+    let date;
+    try {
+      date = parseLocalDate(dateString, timezone);
+    } catch (error) {
+      console.error('Invalid date in formatDate:', dateString, error);
+      date = toZonedTime(new Date(), timezone);
+    }
     const today = toZonedTime(new Date(), timezone);
     const tomorrow = toZonedTime(new Date(), timezone);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -233,7 +278,11 @@ export default function Agenda() {
   };
   const isOverdue = (dateString: string) => {
     const naiveDate = parseDateFns(dateString, "dd/MM/yyyy", new Date(), { locale: ptBR });
-    const utcDate = fromZonedTime(naiveLocal, tz);
+    if (isNaN(naiveDate.getTime())) {
+      console.error('Invalid date in isOverdue:', dateString);
+      return false;
+    }
+    const utcDate = fromZonedTime(naiveDate, timezone);
     const taskDate = toZonedTime(utcDate, timezone);
     const today = toZonedTime(new Date(), timezone);
     return taskDate < today && taskDate.toDateString() !== today.toDateString();

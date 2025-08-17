@@ -60,10 +60,25 @@ const PRIORITY_LABELS = {
   alta: "Alta",
 };
 
-// Helper to parse YYYY-MM-DD as local date in timezone
+// Helper to parse YYYY-MM-DD as local date in timezone with validation
 const parseLocalDate = (dateString: string, tz: string): Date => {
-  const [year, month, day] = dateString.split('-').map(Number);
+  if (typeof dateString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    console.error(`Invalid date string format: ${dateString}`);
+    return toZonedTime(new Date(), tz); // Fallback to current date
+  }
+  const [yearStr, monthStr, dayStr] = dateString.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+  if (isNaN(year) || isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+    console.error(`Invalid date components: ${dateString}`);
+    return toZonedTime(new Date(), tz); // Fallback
+  }
   const naiveLocal = new Date(year, month - 1, day);
+  if (isNaN(naiveLocal.getTime())) {
+    console.error(`Created invalid Date from: ${dateString}`);
+    return toZonedTime(new Date(), tz); // Fallback
+  }
   const utcDate = fromZonedTime(naiveLocal, tz);
   return toZonedTime(utcDate, tz);
 };
@@ -90,7 +105,13 @@ function SortableTaskCard({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
-  const taskDate = parseLocalDate(task.date, timezone);
+  let taskDate;
+  try {
+    taskDate = parseLocalDate(task.date, timezone);
+  } catch (error) {
+    console.error('Invalid task date in SortableTaskCard:', task.date, error);
+    taskDate = toZonedTime(new Date(), timezone);
+  }
   const today = toZonedTime(new Date(), timezone);
   const isOverdue =
     taskDate < today &&
@@ -259,7 +280,13 @@ export function TaskKanban({ tasks, onEdit, onDelete }: TaskKanbanProps) {
   // Mapear tarefas para status do kanban
   const getTaskStatus = (task: Task): TaskStatus => {
     if (task.completed) return "completed";
-    const taskDate = parseLocalDate(task.date, timezone);
+    let taskDate;
+    try {
+      taskDate = parseLocalDate(task.date, timezone);
+    } catch (error) {
+      console.error('Invalid task date in getTaskStatus:', task.date, error);
+      taskDate = toZonedTime(new Date(), timezone);
+    }
     const today = toZonedTime(new Date(), timezone);
     today.setHours(0, 0, 0, 0);
     taskDate.setHours(0, 0, 0, 0);
@@ -316,9 +343,16 @@ export function TaskKanban({ tasks, onEdit, onDelete }: TaskKanbanProps) {
         updates.completed = false;
 
         // Se movido para "em andamento", pode ajustar a data se necessário
+        let activeTaskDate;
+        try {
+          activeTaskDate = parseLocalDate(activeTask.date, timezone);
+        } catch (error) {
+          console.error('Invalid activeTask date in dragEnd:', activeTask.date, error);
+          activeTaskDate = toZonedTime(new Date(), timezone);
+        }
         if (
           newStatus === "in-progress" &&
-          parseLocalDate(activeTask.date, timezone) > toZonedTime(new Date(), timezone)
+          activeTaskDate > toZonedTime(new Date(), timezone)
         ) {
           updates.date = formatInTimeZone(toZonedTime(new Date(), timezone), timezone, "yyyy-MM-dd");
         }
