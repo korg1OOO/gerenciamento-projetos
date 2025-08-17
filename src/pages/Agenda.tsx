@@ -97,10 +97,10 @@ export default function Agenda() {
       console.error(`Invalid date components: ${dateString}`);
       return toZonedTime(new Date(), tz); // Fallback
     }
-    const naiveLocal = new Date(year, month - 1, day);
-    if (isNaN(naiveLocal.getTime())) {
-      console.error(`Created invalid Date from: ${dateString}`);
-      return toZonedTime(new Date(), tz); // Fallback
+    const naiveLocal = new Date(Date.UTC(year, month - 1, day));
+    if (naiveLocal.getUTCFullYear() !== year || naiveLocal.getUTCMonth() !== month - 1 || naiveLocal.getUTCDate() !== day) {
+      console.error(`Invalid date (rollover detected): ${dateString}`);
+      return toZonedTime(new Date(), tz); // Fallback for invalid dates like Feb 30
     }
     const utcDate = fromZonedTime(naiveLocal, tz);
     return toZonedTime(utcDate, tz);
