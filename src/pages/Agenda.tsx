@@ -233,8 +233,7 @@ export default function Agenda() {
   };
   const isOverdue = (dateString: string) => {
     const naiveDate = parseDateFns(dateString, "dd/MM/yyyy", new Date(), { locale: ptBR });
-    const utcDate = fromZonedTime(naiveLocal, tz);
-
+    const utcDate = zonedTimeToUtc(naiveDate, timezone);
     const taskDate = toZonedTime(utcDate, timezone);
     const today = toZonedTime(new Date(), timezone);
     return taskDate < today && taskDate.toDateString() !== today.toDateString();

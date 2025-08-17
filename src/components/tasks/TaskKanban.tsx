@@ -64,8 +64,7 @@ const PRIORITY_LABELS = {
 const parseLocalDate = (dateString: string, tz: string): Date => {
   const [year, month, day] = dateString.split('-').map(Number);
   const naiveLocal = new Date(year, month - 1, day);
-  const utcDate = fromZonedTime(naiveLocal, tz);
-
+  const utcDate = zonedTimeToUtc(naiveLocal, tz);
   return toZonedTime(utcDate, tz);
 };
 
